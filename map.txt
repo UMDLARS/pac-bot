@@ -1,22 +1,35 @@
-UEEEEEEEEEUEEEEEEEEEU
-QIIIIIIIIIHIIIIIIIIIW
-QO3R1I3R1IHI3R1I3R1OW
-QI4E2I4E2IDI4E2I4E2IW
-QIIIIIIIIIIIIIIIIIIIW
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
-UUUUUUUUUUUUUUUUUUUUU
+F----------------------------7
+|F------------7F------------7|
+||............||............||
+||.F--7.F---7.||.F---7.F--7.||
+||O|  |.|   |.||.|   |.|  |O||
+||.L--J.L---J.LJ.L---J.L--J.||
+||..........................||
+||.F--7.F7.F------7.F7.F--7.||
+||.L--J.||.L--7F--J.||.L--J.||
+||......||....||....||......||
+|L----7.|L--7.||.F--J|.F----J|
+L----7|.|F--J.LJ.L--7|.|F----J
+     ||.||    B     ||.||     
+-----J|.|| F-7==F-7 ||.|L-----
+------J.LJ |FJ==L7| LJ.L------
+       .   || IPC||   .       
+------7.F7 |L----J| F7.F------
+-----7|.|| L------J ||.|F-----
+     ||.||          ||.||     
+F----J|.|| F------7.||.|L----7
+|F----J.LJ.L--7F--J.LJ.L----7|
+||............||............||
+||.F--7.F---7.||.F---7.F--7.||
+||.L-7|.L---J.LJ.L---J.|F-J.||
+||O..||................||..O||
+|L-7.||.F7.F------7.F7.||.F-J|
+|F-J.LJ.||.L--7F--J.||.LJ.L-7|
+||......||....||....||......||
+||.F----JL--7.||.F--JL----7.||
+||.L--------J.LJ.L--------J.||
+||..........................||
+|L--------------------------J|
+L----------------------------J
+
+

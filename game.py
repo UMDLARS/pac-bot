@@ -7,12 +7,12 @@ from CYLGame import StatusPanel
 from CYLGame import PanelBorder
 
 
-DEBUG = False
+DEBUG = True
 
 
 class PacBot(Game):
-    MAP_WIDTH = 22
-    MAP_HEIGHT = 22
+    MAP_WIDTH = 30
+    MAP_HEIGHT = 34
     SCREEN_WIDTH = MAP_WIDTH + 2
     SCREEN_HEIGHT = MAP_HEIGHT + 6
     MSG_START = 20
@@ -32,30 +32,28 @@ class PacBot(Game):
     HOUSE_ODDS = 500 # e.g., 1/500
 
 
+    PLAYER_START_X = 14
+    PLAYER_START_Y = 24
+
     PLAYER = '@'
     EMPTY = '\0'
-    LWALL = chr(255)
-    UWALL = chr(254)
-    DWALL = chr(253)
-    RWALL = chr(252)
-    UCAP = chr(251)
-    DCAP = chr(250)
-    RCAP = chr(249)
-    LCAP = chr(248)
-    ULCOR = chr(247)
-    URCOR = chr(246)
-    BRCOR = chr(245)
-    BLCOR = chr(244)
-    URXCOR = chr(243)
-    BRXCOR = chr(242)
-    BLXCOR = chr(241)
-    ULXCOR = chr(240)
-    LRWALL = chr(239)
-    UDWALL = chr(238)
+    APPLE = 'O'
     FULL = chr(224)
     DOT = chr(225)
     POWER = chr(226)
     DOOR = chr(227)
+    PIPE = chr(228)
+    HYPHEN = chr(229)
+    J = chr(230)
+    L = chr(231)
+    F = chr(232)
+    SEVEN = chr(233)
+
+    # ghosts
+    BLINKY = chr(234)
+    PINKY = chr(235)
+    INKY = chr(236)
+    CLYDE = chr(237)
     
 
     def __init__(self, random):
@@ -67,7 +65,7 @@ class PacBot(Game):
         self.last_move = 'w' # need this to restore objects
         self.flying = 0 # set to some value and decrement (0 == on ground)
         self.hp = 1
-        self.player_pos = [self.MAP_WIDTH / 2, self.MAP_HEIGHT - 4]
+        self.player_pos = [self.PLAYER_START_X, self.PLAYER_START_Y]
         self.score = 0
         self.objects = []
         self.turns = 0
@@ -75,10 +73,24 @@ class PacBot(Game):
         self.msg_panel = MessagePanel(self.MSG_START, self.MAP_HEIGHT + 1, self.SCREEN_WIDTH - self.MSG_START, 5)
         self.status_panel = StatusPanel(0, self.MAP_HEIGHT + 1, self.MSG_START, 5)
         self.panels = [self.msg_panel, self.status_panel]
-        self.msg_panel.add("Velkommen to Robot Backcountry Skiing!")
-        self.msg_panel.add("Move left and right! Don't crash!")
 
         self.__create_map()
+
+    def print_ready(self):
+        x = 12
+        y = 18
+        for char in "READY!":
+            self.map[(x,y)] = char
+            x += 1
+
+    def erase_ready(self):
+        x = 12
+        y = 18
+        for char in "READY!":
+            self.map[(x,y)] = ' '
+            x += 1
+
+
 
     def __create_map(self):
         self.map = MapPanel(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT + 1, self.EMPTY,
@@ -86,28 +98,21 @@ class PacBot(Game):
 
         self.panels += [self.map]
 
-        mapmap = {'Q': self.LWALL,
-                  'W': self.RWALL,
-                  'E': self.UWALL,
-                  'R': self.DWALL,
-                  'A': self.LCAP,
-                  'S': self.RCAP,
-                  'D': self.UCAP,
-                  'F': self.DCAP,
-                  'Z': self.BLCOR,
-                  'X': self.ULCOR,
-                  'C': self.BRCOR,
-                  'V': self.URCOR,
-                  '1': self.BLXCOR,
-                  '2': self.ULXCOR,
-                  '3': self.BRXCOR,
-                  '4': self.URXCOR,
-                  'U': self.FULL,
-                  'I': self.DOT,
+        mapmap = {'|': self.PIPE,
+                  '-': self.HYPHEN,
+                  'L': self.L,
+                  '7': self.SEVEN,
+                  'J': self.J,
+                  'F': self.F,
+                  '.': self.DOT,
                   'O': self.POWER,
-                  'P': self.DOOR,
-                  'H': self.LRWALL,
-                  'J': self.UDWALL}
+                  '=': self.DOOR,
+                  '#': self.FULL,
+                  ' ': self.EMPTY,
+                  'B': self.BLINKY,
+                  'P': self.PINKY,
+                  'I': self.INKY,
+                  'C': self.CLYDE}
 
         # open map file
         x = 0
@@ -121,7 +126,9 @@ class PacBot(Game):
                     x += 1
                 y += 1
         
-        self.map[(9,15)] = self.PLAYER
+        self.map[(14,24)] = self.PLAYER
+
+        self.print_ready()
 
         if DEBUG:
             print(self.get_vars_for_bot())  # need sensors before turn
@@ -177,50 +184,70 @@ class PacBot(Game):
                     self.map[(self.player_pos[0] + x, self.player_pos[1] + y)] = self.TRACKS
 
 
-    def handle_key(self, key):
-        self.turns += 1
-        if self.flying > 0:
-            self.score += self.FLYING_POINTS
-            self.flying -= 1
-            self.msg_panel += ["In flight for " + str(self.flying) + " turns..."]
-            if self.flying == 0:
-                self.msg_panel += ["Back on the ground!"]
+    def is_ghost(self, item):
+        if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE:
+            return True
         else:
-            self.score += 1
+            return False
 
-        if self.turns % 30 == 0:
-            self.level += 1
+    def is_fruit(self, item):
+        if item == self.APPLE:
+            return True
+        else:
+            return False
+
+
+    def is_blocked(self, x, y):
+
+        # returns true if the cell in the map is obstructed
+        spot = self.map[(x,y)]
+
+        if spot == self.DOT or spot == self.POWER or spot == self.EMPTY or self.is_ghost(spot) or self.is_fruit(spot):
+            return False
+        else:
+            return True
+
+    def handle_key(self, key):
+
+        self.turns += 1
+        
+        if self.turns == 1:
+            self.erase_ready()
+
+        if DEBUG:
+            print("turn: %d player started at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
-        if key == "a":
-            self.player_pos[0] -= 1
-        if key == "d":
+
+        if key == "a" and not self.is_blocked(self.player_pos[0] - 1, self.player_pos[1]):
+                self.player_pos[0] -= 1
+        if key == "d" and not self.is_blocked(self.player_pos[0] + 1, self.player_pos[1]):
             self.player_pos[0] += 1
-        if key == "w":
-            pass
-        if key == "t":
-            # horizontal-only teleporting code
-            self.msg_panel += ["TELEPORT! (-1 HP)"]
-            self.hp -= 1
-            self.player_pos[0] = self.random.randint(0, self.MAP_WIDTH - 1)
+        if key == "w" and not self.is_blocked(self.player_pos[0], self.player_pos[1] - 1):
+            self.player_pos[1] -= 1
+        if key == "s" and not self.is_blocked(self.player_pos[0], self.player_pos[1] + 1):
+            self.player_pos[1] += 1
+
+        if self.player_pos[0] == 0 and self.player_pos[1] == 15:
+            self.player_pos[0] = 28
+        elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
+            self.player_pos[0] = 1
 
         if key == "Q":
             self.running = False
             return
 
-        self.last_move = key # save last move for saved_object restoration
+        # add score based on new position
+        if self.map[(self.player_pos[0], self.player_pos[1])] == self.DOT:
+            self.score += 10
+        if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
+            self.score += 50
 
-        # shift the map
+        self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+
+        if DEBUG:
+            print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
         
-        self.colliding = False  # reset colliding variable
-
-        # check for various types of collisions (good and bad)
-        if self.flying < 1:
-            if self.colliding:
-                self.map[(self.player_pos[0], self.player_pos[1])] = self.FULL
-            else:
-                self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
-
         # vars should be gotten at the end of handle_turn, because vars
         # affect the *next* turn...
         if DEBUG:
