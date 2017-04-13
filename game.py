@@ -54,6 +54,18 @@ class PacBot(Game):
     PINKY = chr(235)
     INKY = chr(236)
     CLYDE = chr(237)
+    EYES = chr(238)
+    EDIBLE = chr(239)
+
+    #fruit
+    CHERRY = chr(240)
+    STRAWBERRY = chr(241)
+    ORANGE = chr(242)
+    BELL = chr(243)
+    APPLE = chr(244)
+    MELON = chr(245)
+    GALAXIAN = chr(246)
+    KEY = chr(247)
     
 
     def __init__(self, random):
