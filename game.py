@@ -9,6 +9,15 @@ from CYLGame import PanelBorder
 
 DEBUG = True
 
+class Ghost:
+
+    def __init__(self, name, char, start_x, start_y):
+        self.name = name
+        self.char = char
+        self.start_x = start_x
+        self.start_y = start_y
+        self.pos = [start_x, start_y]
+        self.alive = True
 
 class PacBot(Game):
     MAP_WIDTH = 30
@@ -21,19 +30,28 @@ class PacBot(Game):
     CHAR_HEIGHT = 16
     GAME_TITLE = "Pac-Bot"
     CHAR_SET = "terminal16x16_gs_ro.png"
+    LIVES_START = 4
 
     SENSE_DIST = 20
 
 
     MAX_TURNS = 500
-    MAX_FLYING = 10
     FLYING_POINTS = 5
     COIN_POINTS = 25
     HOUSE_ODDS = 500 # e.g., 1/500
 
 
+    # starting positions
     PLAYER_START_X = 14
     PLAYER_START_Y = 24
+    BLINKY_START_X = 14
+    BLINKY_START_Y = 12
+    PINKY_START_X = 14
+    PINKY_START_Y = 15
+    INKY_START_X = 15
+    INKY_START_Y = 15
+    CLYDE_START_X = 16
+    CLYDE_START_Y = 15
 
     PLAYER = '@'
     EMPTY = '\0'
@@ -66,6 +84,7 @@ class PacBot(Game):
     MELON = chr(245)
     GALAXIAN = chr(246)
     KEY = chr(247)
+    STAR = chr(43)
     
 
     def __init__(self, random):
@@ -73,10 +92,11 @@ class PacBot(Game):
         self.random = random
         self.running = True
         self.colliding = False
+        self.energized = 0 # positive means energized for that many turns
+        self.ghost_multiplier = 1
         self.saved_object = None # stores a map item we're "on top of"
         self.last_move = 'w' # need this to restore objects
-        self.flying = 0 # set to some value and decrement (0 == on ground)
-        self.hp = 1
+        self.lives = 3
         self.player_pos = [self.PLAYER_START_X, self.PLAYER_START_Y]
         self.score = 0
         self.objects = []
@@ -86,7 +106,17 @@ class PacBot(Game):
         self.status_panel = StatusPanel(0, self.MAP_HEIGHT + 1, self.MSG_START, 5)
         self.panels = [self.msg_panel, self.status_panel]
 
+
+        # array of ghost objects
+        # ghosts use the functions in the PacBot object
+        self.ghosts = {}
+        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
+        self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.PINKY_START_X, self.PINKY_START_Y)
+        self.ghosts['inky'] = Ghost("inky", self.INKY, self.INKY_START_X, self.INKY_START_Y)
+        self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
+        
         self.__create_map()
+
 
     def print_ready(self):
         x = 12
@@ -102,6 +132,38 @@ class PacBot(Game):
             self.map[(x,y)] = ' '
             x += 1
 
+    def redraw_lives(self):
+
+        # erase and redraw life count
+
+        for x in range(self.LIVES_START):
+            self.map[(1 + x, 33)] = self.EMPTY
+            if self.lives > x:
+                self.map[(1 + x, 33)] = self.PLAYER
+
+
+    def reset_positions(self):
+
+        self.player_pos[0] = self.PLAYER_START_X
+        self.player_pos[1] = self.PLAYER_START_Y
+        self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+
+        for g in self.ghosts:
+            if self.ghosts[g].name == "blinky":
+                self.ghosts[g].pos[0] = self.BLINKY_START_X
+                self.ghosts[g].pos[1] = self.BLINKY_START_Y
+            elif self.ghosts[g].name == "pinky":
+                self.ghosts[g].pos[0] = self.PINKY_START_X
+                self.ghosts[g].pos[1] = self.PINKY_START_Y
+            elif self.ghosts[g].name == "inky":
+                self.ghosts[g].pos[0] = self.INKY_START_X
+                self.ghosts[g].pos[1] = self.INKY_START_Y
+            elif self.ghosts[g].name == "clyde":
+                self.ghosts[g].pos[0] = self.CLYDE_START_X
+                self.ghosts[g].pos[1] = self.CLYDE_START_Y
+
+
+        self.redraw_ghosts()
 
 
     def __create_map(self):
@@ -138,7 +200,9 @@ class PacBot(Game):
                     x += 1
                 y += 1
         
-        self.map[(14,24)] = self.PLAYER
+        self.reset_positions()
+
+        self.redraw_lives()
 
         self.print_ready()
 
@@ -190,10 +254,6 @@ class PacBot(Game):
                 # if the player didn't teleport, put object back
                 self.map[(self.player_pos[0] + x, self.player_pos[1] + y)] = self.saved_object
                 self.saved_object = None
-        else:
-            if self.flying < 1:
-                if self.map[(self.player_pos[0] + x, self.player_pos[1] + y)] == self.EMPTY:
-                    self.map[(self.player_pos[0] + x, self.player_pos[1] + y)] = self.TRACKS
 
 
     def is_ghost(self, item):
@@ -208,7 +268,6 @@ class PacBot(Game):
         else:
             return False
 
-
     def is_blocked(self, x, y):
 
         # returns true if the cell in the map is obstructed
@@ -219,9 +278,18 @@ class PacBot(Game):
         else:
             return True
 
+    def redraw_ghosts(self):
+        for g in self.ghosts:
+            if self.ghosts[g].alive:
+                self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.ghosts[g].char
+
     def handle_key(self, key):
 
         self.turns += 1
+        if self.energized > 0: # count down powered turns
+            self.energized -= 1
+            if self.energized == 0:
+                self.ghost_multiplier = 1 # reset for next time
         
         if self.turns == 1:
             self.erase_ready()
@@ -232,7 +300,7 @@ class PacBot(Game):
         self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
 
         if key == "a" and not self.is_blocked(self.player_pos[0] - 1, self.player_pos[1]):
-                self.player_pos[0] -= 1
+            self.player_pos[0] -= 1
         if key == "d" and not self.is_blocked(self.player_pos[0] + 1, self.player_pos[1]):
             self.player_pos[0] += 1
         if key == "w" and not self.is_blocked(self.player_pos[0], self.player_pos[1] - 1):
@@ -249,13 +317,34 @@ class PacBot(Game):
             self.running = False
             return
 
+        # detect ghost collisions
+        if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
+            if self.energized > 0:
+                
+                self.score += self.ghost_multiplier * 200
+                self.ghost_multiplier += 1
+
+            else:
+                
+                self.lives -= 1
+                self.redraw_lives()
+        
+                if self.lives == 0:
+                    self.running = False
+                else:
+                    self.reset_positions()
+
+
+
         # add score based on new position
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.DOT:
             self.score += 10
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
             self.score += 50
+            self.energized = 50
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+        self.redraw_ghosts()
 
         if DEBUG:
             print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
@@ -295,8 +384,7 @@ class PacBot(Game):
                 if bot_vars[sensor] == 64:
                     bot_vars[sensor] = 0
 
-        bot_vars['hp'] = self.hp
-        bot_vars['flying'] = self.flying
+        bot_vars['lives'] = self.lives
 
         if DEBUG:
             print(bot_vars)
@@ -332,7 +420,7 @@ class PacBot(Game):
         if self.turns >= self.MAX_TURNS:
             self.running = False
             self.msg_panel.add("You are out of moves.")
-        elif self.hp <= 0:
+        elif self.lives <= 0:
             self.running = False
             self.msg_panel += ["You sustained too much damage!"]
             self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
