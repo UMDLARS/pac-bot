@@ -18,6 +18,7 @@ class Ghost:
         self.start_y = start_y
         self.pos = [start_x, start_y]
         self.alive = True
+        self.mode = None
 
 class PacBot(Game):
     MAP_WIDTH = 30
@@ -46,12 +47,19 @@ class PacBot(Game):
     PLAYER_START_Y = 24
     BLINKY_START_X = 14
     BLINKY_START_Y = 12
-    PINKY_START_X = 14
-    PINKY_START_Y = 15
-    INKY_START_X = 15
-    INKY_START_Y = 15
-    CLYDE_START_X = 16
-    CLYDE_START_Y = 15
+#    PINKY_START_X = 14
+#    PINKY_START_Y = 15
+#    INKY_START_X = 15
+#    INKY_START_Y = 15
+#    CLYDE_START_X = 16
+#    CLYDE_START_Y = 15
+    PINKY_START_X = 15
+    PINKY_START_Y = 12
+    INKY_START_X = 16
+    INKY_START_Y = 12
+    CLYDE_START_X = 17
+    CLYDE_START_Y = 12
+
 
     PLAYER = '@'
     EMPTY = '\0'
@@ -149,6 +157,7 @@ class PacBot(Game):
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
 
         for g in self.ghosts:
+            self.ghosts[g].alive = True
             if self.ghosts[g].name == "blinky":
                 self.ghosts[g].pos[0] = self.BLINKY_START_X
                 self.ghosts[g].pos[1] = self.BLINKY_START_Y
@@ -257,7 +266,7 @@ class PacBot(Game):
 
 
     def is_ghost(self, item):
-        if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE:
+        if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE or item == self.EDIBLE:
             return True
         else:
             return False
@@ -278,10 +287,22 @@ class PacBot(Game):
         else:
             return True
 
+    def get_ghost_by_xy(self, x, y):
+        for ghost in self.ghosts:
+            this_ghost = self.ghosts[ghost]
+            if this_ghost.pos[0] == x and this_ghost.pos[1] == y:
+                return this_ghost
+
     def redraw_ghosts(self):
         for g in self.ghosts:
             if self.ghosts[g].alive:
-                self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.ghosts[g].char
+                if self.energized > 0:
+                    # draw ghosts in blue to indicate edibility
+                    self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.EDIBLE
+
+                else:
+                    # otherwise use their color
+                    self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.ghosts[g].char
 
     def handle_key(self, key):
 
@@ -321,11 +342,16 @@ class PacBot(Game):
         if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
             if self.energized > 0:
                 
+                # which ghost did I eat? ghosts aren't just map objects
+                # anymore...
+                ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
+                ghost.alive = False
                 self.score += self.ghost_multiplier * 200
                 self.ghost_multiplier += 1
 
             else:
                 
+                # touching ghosts is bad for you
                 self.lives -= 1
                 self.redraw_lives()
         
