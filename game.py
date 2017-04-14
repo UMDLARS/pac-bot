@@ -138,7 +138,7 @@ class PacBot(Game):
         x = 12
         y = 18
         for char in "READY!":
-            self.map[(x,y)] = ' '
+            self.map[(x,y)] = self.EMPTY
             x += 1
 
     def redraw_lives(self):
