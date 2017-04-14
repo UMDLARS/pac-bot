@@ -113,6 +113,7 @@ class PacBot(Game):
         self.msg_panel = MessagePanel(self.MSG_START, self.MAP_HEIGHT + 1, self.SCREEN_WIDTH - self.MSG_START, 5)
         self.status_panel = StatusPanel(0, self.MAP_HEIGHT + 1, self.MSG_START, 5)
         self.panels = [self.msg_panel, self.status_panel]
+        self.pellets_eaten = 0
 
 
         # array of ghost objects
@@ -154,7 +155,10 @@ class PacBot(Game):
 
         self.player_pos[0] = self.PLAYER_START_X
         self.player_pos[1] = self.PLAYER_START_Y
+
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+
+        self.energized = 0
 
         for g in self.ghosts:
             self.ghosts[g].alive = True
@@ -210,6 +214,7 @@ class PacBot(Game):
                 y += 1
         
         self.reset_positions()
+        self.redraw_ghosts()
 
         self.redraw_lives()
 
@@ -365,9 +370,18 @@ class PacBot(Game):
         # add score based on new position
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.DOT:
             self.score += 10
+            self.pellets_eaten += 1
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
             self.score += 50
             self.energized = 50
+            self.pellets_eaten += 1
+
+        print("Pellets eaten: %d" % (self.pellets_eaten))
+
+        if (self.pellets_eaten == 249):
+            self.level += 1
+            self.__create_map()
+
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
         self.redraw_ghosts()
