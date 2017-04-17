@@ -36,7 +36,7 @@ class PacBot(Game):
     SENSE_DIST = 20
 
 
-    MAX_TURNS = 500
+    MAX_TURNS = 2000
     FLYING_POINTS = 5
     COIN_POINTS = 25
     HOUSE_ODDS = 500 # e.g., 1/500
@@ -93,6 +93,11 @@ class PacBot(Game):
     GALAXIAN = chr(246)
     KEY = chr(247)
     STAR = chr(43)
+    FRUITS = [CHERRY, STRAWBERRY, ORANGE, ORANGE, APPLE, APPLE, MELON, MELON, GALAXIAN, GALAXIAN, BELL, BELL, KEY]
+    FRUIT_POINTS = {CHERRY: 100, STRAWBERRY: 300, ORANGE: 500, 
+            ORANGE: 500, APPLE: 700, APPLE: 700, MELON: 1000, 
+            MELON: 1000, GALAXIAN: 2000, GALAXIAN: 2000, 
+            BELL: 3000, BELL: 3000, KEY: 5000}
     
 
     def __init__(self, random):
@@ -107,9 +112,10 @@ class PacBot(Game):
         self.lives = 3
         self.player_pos = [self.PLAYER_START_X, self.PLAYER_START_Y]
         self.score = 0
+        self.extra_life = False
         self.objects = []
         self.turns = 0
-        self.level = 1
+        self.level = 0
         self.msg_panel = MessagePanel(self.MSG_START, self.MAP_HEIGHT + 1, self.SCREEN_WIDTH - self.MSG_START, 5)
         self.status_panel = StatusPanel(0, self.MAP_HEIGHT + 1, self.MSG_START, 5)
         self.panels = [self.msg_panel, self.status_panel]
@@ -126,6 +132,12 @@ class PacBot(Game):
         
         self.__create_map()
 
+    def get_fruit_for_level(self):
+
+        if self.level > len(self.FRUITS):
+            return self.KEY
+        else:
+            return self.FRUITS[self.level]
 
     def print_ready(self):
         x = 12
@@ -277,7 +289,7 @@ class PacBot(Game):
             return False
 
     def is_fruit(self, item):
-        if item == self.APPLE:
+        if item in self.FRUITS:
             return True
         else:
             return False
@@ -312,12 +324,13 @@ class PacBot(Game):
     def handle_key(self, key):
 
         self.turns += 1
+
         if self.energized > 0: # count down powered turns
             self.energized -= 1
             if self.energized == 0:
                 self.ghost_multiplier = 1 # reset for next time
         
-        if self.turns == 1:
+        if self.pellets_eaten == 1:
             self.erase_ready()
 
         if DEBUG:
@@ -358,7 +371,6 @@ class PacBot(Game):
                 
                 # touching ghosts is bad for you
                 self.lives -= 1
-                self.redraw_lives()
         
                 if self.lives == 0:
                     self.running = False
@@ -376,14 +388,29 @@ class PacBot(Game):
             self.energized = 50
             self.pellets_eaten += 1
 
-        print("Pellets eaten: %d" % (self.pellets_eaten))
+        # make fruit appear
+        if self.pellets_eaten == 70 or self.pellets_eaten == 170:
+            self.map[(14,18)] = self.get_fruit_for_level()
+        elif self.pellets_eaten == 120 or self.pellets_eaten == 220:
+            self.map[(14,18)] = self.EMPTY
 
-        if (self.pellets_eaten == 249):
+        # handle eating fruit
+        item = self.map[(self.player_pos[0], self.player_pos[1])]
+        if item in self.FRUITS:
+            self.score += self.FRUIT_POINTS[item]
+
+        if ((self.pellets_eaten % 249) == 0):
             self.level += 1
+            self.pellets_eaten = 0
             self.__create_map()
+
+        if self.score >= 10000 and self.extra_life == False:
+            extra_life = True
+            self.lives += 1
 
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+        self.redraw_lives()
         self.redraw_ghosts()
 
         if DEBUG:
