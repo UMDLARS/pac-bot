@@ -17,8 +17,12 @@ class Ghost:
         self.start_x = start_x
         self.start_y = start_y
         self.pos = [start_x, start_y]
+        self.direction = 'a'
         self.alive = True
-        self.mode = None
+        self.saved_object = None # stores a map item we're "on top of"
+        self.mode = "frightened" # scatter, chase, or frightened
+        #self.mode = None # scatter, chase, or frightened
+
 
 class PacBot(Game):
     MAP_WIDTH = 30
@@ -107,8 +111,6 @@ class PacBot(Game):
         self.colliding = False
         self.energized = 0 # positive means energized for that many turns
         self.ghost_multiplier = 1
-        self.saved_object = None # stores a map item we're "on top of"
-        self.last_move = 'w' # need this to restore objects
         self.lives = 3
         self.player_pos = [self.PLAYER_START_X, self.PLAYER_START_Y]
         self.score = 0
@@ -173,19 +175,21 @@ class PacBot(Game):
         self.energized = 0
 
         for g in self.ghosts:
-            self.ghosts[g].alive = True
-            if self.ghosts[g].name == "blinky":
-                self.ghosts[g].pos[0] = self.BLINKY_START_X
-                self.ghosts[g].pos[1] = self.BLINKY_START_Y
-            elif self.ghosts[g].name == "pinky":
-                self.ghosts[g].pos[0] = self.PINKY_START_X
-                self.ghosts[g].pos[1] = self.PINKY_START_Y
-            elif self.ghosts[g].name == "inky":
-                self.ghosts[g].pos[0] = self.INKY_START_X
-                self.ghosts[g].pos[1] = self.INKY_START_Y
-            elif self.ghosts[g].name == "clyde":
-                self.ghosts[g].pos[0] = self.CLYDE_START_X
-                self.ghosts[g].pos[1] = self.CLYDE_START_Y
+            ghost = self.ghosts[g]
+            ghost.alive = True
+            ghost.mode = "frightened" # FIXME should be 'scatter'
+            if ghost.name == "blinky":
+                ghost.pos[0] = self.BLINKY_START_X
+                ghost.pos[1] = self.BLINKY_START_Y
+            elif ghost.name == "pinky":
+                ghost.pos[0] = self.PINKY_START_X
+                ghost.pos[1] = self.PINKY_START_Y
+            elif ghost.name == "inky":
+                ghost.pos[0] = self.INKY_START_X
+                ghost.pos[1] = self.INKY_START_Y
+            elif ghost.name == "clyde":
+                ghost.pos[0] = self.CLYDE_START_X
+                ghost.pos[1] = self.CLYDE_START_Y
 
 
         self.redraw_ghosts()
@@ -294,12 +298,11 @@ class PacBot(Game):
         else:
             return False
 
-    def is_blocked(self, x, y):
+    def is_blocked(self, item):
 
         # returns true if the cell in the map is obstructed
-        spot = self.map[(x,y)]
-
-        if spot == self.DOT or spot == self.POWER or spot == self.EMPTY or self.is_ghost(spot) or self.is_fruit(spot):
+        
+        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(item):
             return False
         else:
             return True
@@ -312,14 +315,77 @@ class PacBot(Game):
 
     def redraw_ghosts(self):
         for g in self.ghosts:
-            if self.ghosts[g].alive:
+            ghost = self.ghosts[g]
+            if ghost.alive:
                 if self.energized > 0:
                     # draw ghosts in blue to indicate edibility
-                    self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.EDIBLE
+                    self.map[(ghost.pos[0], ghost.pos[1])] = self.EDIBLE
 
                 else:
                     # otherwise use their color
-                    self.map[(self.ghosts[g].pos[0], self.ghosts[g].pos[1])] = self.ghosts[g].char
+                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
+
+    def move_ghost(self, ghost):
+        if ghost.mode == "chase":
+            # chase pac-bot
+            None
+        elif ghost.mode == "scatter":
+            # go to individual corners
+            None
+        else: # mode is frightened
+            # run away from pac-bot
+
+            dirs = [] # list of directions we can go
+
+            # determine which directions are open
+            item = self.map[(ghost.pos[0] + 1, ghost.pos[1])]
+            if not self.is_blocked(item) and not self.is_ghost(item):
+                dirs.append("d")
+            
+            item = self.map[(ghost.pos[0] - 1, ghost.pos[1])]
+            if not self.is_blocked(item) and not self.is_ghost(item):
+                dirs.append("a")
+            
+            item = self.map[(ghost.pos[0], ghost.pos[1] + 1)]
+            if not self.is_blocked(item) and not self.is_ghost(item):
+                dirs.append("s")
+            
+            item = self.map[(ghost.pos[0], ghost.pos[1] - 1)]
+            if not self.is_blocked(item) and not self.is_ghost(item):
+                dirs.append("w")
+            
+            if DEBUG:
+                print("Open directions for %s are: %s" % (ghost.name, str(dirs)))
+
+            if len(dirs) > 0:
+
+                direction = self.random.randint(0, len(dirs) - 1)
+                choice = dirs[direction]
+
+                if ghost.saved_object:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
+                    ghost.saved_object = None
+                else:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
+
+                if choice == 'a':
+                    ghost.pos[0] -= 1
+                elif choice == 'd':
+                    ghost.pos[0] += 1
+                elif choice == 'w':
+                    ghost.pos[1] -= 1
+                elif choice == 's':
+                    ghost.pos[1] += 1
+
+
+        if ghost.pos[0] == 0 and ghost.pos[1] == 15:
+            ghost.pos[0] = 28
+        elif ghost.pos[0] == 29 and ghost.pos[1] == 15:
+            ghost.pos[0] = 1
+
+
+
+
 
     def handle_key(self, key):
 
@@ -338,19 +404,21 @@ class PacBot(Game):
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
 
-        if key == "a" and not self.is_blocked(self.player_pos[0] - 1, self.player_pos[1]):
+        item = self.map[(self.player_pos[0] - 1, self.player_pos[1])]
+        if key == "a" and not self.is_blocked(item):
             self.player_pos[0] -= 1
-        if key == "d" and not self.is_blocked(self.player_pos[0] + 1, self.player_pos[1]):
-            self.player_pos[0] += 1
-        if key == "w" and not self.is_blocked(self.player_pos[0], self.player_pos[1] - 1):
-            self.player_pos[1] -= 1
-        if key == "s" and not self.is_blocked(self.player_pos[0], self.player_pos[1] + 1):
-            self.player_pos[1] += 1
 
-        if self.player_pos[0] == 0 and self.player_pos[1] == 15:
-            self.player_pos[0] = 28
-        elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
-            self.player_pos[0] = 1
+        item = self.map[(self.player_pos[0] + 1, self.player_pos[1])]
+        if key == "d" and not self.is_blocked(item):
+            self.player_pos[0] += 1
+
+        item = self.map[(self.player_pos[0], self.player_pos[1] - 1)]
+        if key == "w" and not self.is_blocked(item):
+            self.player_pos[1] -= 1
+
+        item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
+        if key == "s" and not self.is_blocked(item):
+            self.player_pos[1] += 1
 
         if key == "Q":
             self.running = False
@@ -411,6 +479,13 @@ class PacBot(Game):
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
         self.redraw_lives()
+
+        for g in self.ghosts:
+            ghost = self.ghosts[g]
+            print("old position: %s" %(str(ghost.pos)))
+            self.move_ghost(ghost)
+            print("new position: %s" %(str(ghost.pos)))
+
         self.redraw_ghosts()
 
         if DEBUG:
