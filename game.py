@@ -11,7 +11,7 @@ DEBUG = True
 
 class Ghost:
 
-    def __init__(self, name, char, start_x, start_y):
+    def __init__(self, name, char, start_x, start_y, in_house=True):
         self.name = name
         self.char = char
         self.start_x = start_x
@@ -19,6 +19,7 @@ class Ghost:
         self.pos = [start_x, start_y]
         self.direction = 'a'
         self.alive = True
+        self.in_house = in_house # set to True by default
         self.saved_object = None # stores a map item we're "on top of"
         self.mode = "frightened" # scatter, chase, or frightened
         #self.mode = None # scatter, chase, or frightened
@@ -51,18 +52,21 @@ class PacBot(Game):
     PLAYER_START_Y = 24
     BLINKY_START_X = 14
     BLINKY_START_Y = 12
-#    PINKY_START_X = 14
-#    PINKY_START_Y = 15
-#    INKY_START_X = 15
-#    INKY_START_Y = 15
-#    CLYDE_START_X = 16
-#    CLYDE_START_Y = 15
-    PINKY_START_X = 15
-    PINKY_START_Y = 12
-    INKY_START_X = 16
-    INKY_START_Y = 12
-    CLYDE_START_X = 17
-    CLYDE_START_Y = 12
+    # start in house for real
+    PINKY_START_X = 14
+    PINKY_START_Y = 15
+    INKY_START_X = 15
+    INKY_START_Y = 15
+    CLYDE_START_X = 16
+    CLYDE_START_Y = 15
+
+#    # start in hallway for testing
+#    PINKY_START_X = 15
+#    PINKY_START_Y = 12
+#    INKY_START_X = 16
+#    INKY_START_Y = 12
+#    CLYDE_START_X = 17
+#    CLYDE_START_Y = 12
 
 
     PLAYER = '@'
@@ -102,7 +106,11 @@ class PacBot(Game):
             ORANGE: 500, APPLE: 700, APPLE: 700, MELON: 1000, 
             MELON: 1000, GALAXIAN: 2000, GALAXIAN: 2000, 
             BELL: 3000, BELL: 3000, KEY: 5000}
-    
+
+    # classes of objects for sensors
+    WALLTYPE = 1000
+    GHOSTTYPE = 1001
+    FRUITTYPE = 1002
 
     def __init__(self, random):
         self.sensor_coords = [] # variables for adjustable sensors from LP
@@ -127,7 +135,7 @@ class PacBot(Game):
         # array of ghost objects
         # ghosts use the functions in the PacBot object
         self.ghosts = {}
-        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
+        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y, in_house = False)
         self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.PINKY_START_X, self.PINKY_START_Y)
         self.ghosts['inky'] = Ghost("inky", self.INKY, self.INKY_START_X, self.INKY_START_Y)
         self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
@@ -175,21 +183,35 @@ class PacBot(Game):
         self.energized = 0
 
         for g in self.ghosts:
+
             ghost = self.ghosts[g]
+            
+            # remove ghosts from their current locations on the map
+            # make sure to drop anything they're "carrying"
+            if ghost.saved_object:
+                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
+                ghost.saved_object = None
+            else:
+                self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
+
             ghost.alive = True
             ghost.mode = "frightened" # FIXME should be 'scatter'
             if ghost.name == "blinky":
                 ghost.pos[0] = self.BLINKY_START_X
                 ghost.pos[1] = self.BLINKY_START_Y
+                ghost.in_house = False
             elif ghost.name == "pinky":
                 ghost.pos[0] = self.PINKY_START_X
                 ghost.pos[1] = self.PINKY_START_Y
+                ghost.in_house = True
             elif ghost.name == "inky":
                 ghost.pos[0] = self.INKY_START_X
                 ghost.pos[1] = self.INKY_START_Y
+                ghost.in_house = True
             elif ghost.name == "clyde":
                 ghost.pos[0] = self.CLYDE_START_X
                 ghost.pos[1] = self.CLYDE_START_Y
+                ghost.in_house = True
 
 
         self.redraw_ghosts()
@@ -253,39 +275,6 @@ class PacBot(Game):
                 self.map[(x, y)] = char
                 placed_objects += 1
 
-    def save_object(self, obj):
-        self.saved_object = obj
-
-    def restore_object_tracks(self):
-
-        # restore an object you went over or make tracks
-
-        # where should the object be restored?
-        y = 1 # it's always going to be behind us
-        x = 0 # we will set the x value accordingly
-        
-        if self.last_move == 'a':
-            x = 1
-        elif self.last_move == 'd':
-            x = -1
-        elif self.last_move == 'w':
-            x = 0
-
-        if self.saved_object:
-            if self.last_move == 't':
-                # if the player previously teleported when on an
-                # obstacle, just destroy the obstacle. We can't put it
-                # back where it was because we don't know (x, y) for the
-                # player due to map shifting, and we can't draw it under
-                # us or we will collide with it twice!
-                self.msg_panel += ["Teleporting destroyed the object!"]
-                self.saved_object = None
-            else:
-                # if the player didn't teleport, put object back
-                self.map[(self.player_pos[0] + x, self.player_pos[1] + y)] = self.saved_object
-                self.saved_object = None
-
-
     def is_ghost(self, item):
         if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE or item == self.EDIBLE:
             return True
@@ -339,31 +328,37 @@ class PacBot(Game):
 
             # determine which directions are open
             item = self.map[(ghost.pos[0] + 1, ghost.pos[1])]
-            if not self.is_blocked(item) and not self.is_ghost(item):
+            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("d")
             
             item = self.map[(ghost.pos[0] - 1, ghost.pos[1])]
-            if not self.is_blocked(item) and not self.is_ghost(item):
+            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("a")
             
             item = self.map[(ghost.pos[0], ghost.pos[1] + 1)]
-            if not self.is_blocked(item) and not self.is_ghost(item):
+            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("s")
             
             item = self.map[(ghost.pos[0], ghost.pos[1] - 1)]
-            if not self.is_blocked(item) and not self.is_ghost(item):
+            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("w")
             
             if DEBUG:
                 print("Open directions for %s are: %s" % (ghost.name, str(dirs)))
+
+            print("%s -- saved: %s" % (ghost.name, str(ghost.saved_object)))
 
             if len(dirs) > 0:
 
                 direction = self.random.randint(0, len(dirs) - 1)
                 choice = dirs[direction]
 
+                # if ghost saved an object, drop the object before
+                # moving the ghost to the new location, otherwise, 
+                # erase the ghost's current location
                 if ghost.saved_object:
                     self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
+                    print("%s dropped %d!" % (str(ghost.name), ord(ghost.saved_object)))
                     ghost.saved_object = None
                 else:
                     self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
@@ -376,6 +371,22 @@ class PacBot(Game):
                     ghost.pos[1] -= 1
                 elif choice == 's':
                     ghost.pos[1] += 1
+
+                # if there is already something at the ghost's new
+                # location (a fruit, pellet, or energizer), save it by
+                # having the ghost "pick it up"
+                if self.map[(ghost.pos[0], ghost.pos[1])] != self.EMPTY:
+                    ghost.saved_object = self.map[(ghost.pos[0], ghost.pos[1])]
+                    print("%s picked up %d!" % (str(ghost.name), ord(ghost.saved_object)))
+                
+                # if the ghost is just north of the door, set it so that
+                # they can't go back into the house
+                if self.map[(ghost.pos[0], ghost.pos[1] + 1)] == self.DOOR:
+                    ghost.in_house = False
+
+                # draw the ghost into the map spot so that other ghosts
+                # won't share the same spot
+                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
 
 
         if ghost.pos[0] == 0 and ghost.pos[1] == 15:
@@ -482,9 +493,11 @@ class PacBot(Game):
 
         for g in self.ghosts:
             ghost = self.ghosts[g]
+            print("ghost: %s" % (ghost.name))
             print("old position: %s" %(str(ghost.pos)))
             self.move_ghost(ghost)
             print("new position: %s" %(str(ghost.pos)))
+            print("ghost contents: %s" % (str(ghost.saved_object)))
 
         self.redraw_ghosts()
 
@@ -500,31 +513,33 @@ class PacBot(Game):
         return self.running
 
     def read_bot_state(self, state):
-        # state.get('foo','') <-- set this to a default value that makes
-        # sense
-        # need to get LP values for:
-        # s1x-s7x and s1y-s7y
-        self.sensor_coords = []
-        for i in range(7):
-            x_name = "s" + str(i + 1) + "x"
-            y_name = "s" + str(i + 1) + "y"
-            self.sensor_coords.append((state.get(x_name, "0"), state.get(y_name, "0")))
+        None
 
     def get_vars_for_bot(self):
 
         bot_vars = {}
 
-        # go through self.sensor_coords and retrieve the map item at the
-        # position relative to the player
-        for i in range(7):
-            if (i < len(self.sensor_coords)):
-                sensor = "s" + str(i + 1)
-                x_offset = self.sensor_coords[i][0]
-                y_offset = self.sensor_coords[i][1]
+        # what borders player?
+        dirmod = {'sense_w':[-1, 0], 'sense_e':[1, 0], 'sense_n':[0, -1], 'sense_s':[0, 1]}
 
-                bot_vars[sensor] = ord(self.map[(self.player_pos[0] + int(x_offset), self.player_pos[1] + int(y_offset))])
-                if bot_vars[sensor] == 64:
-                    bot_vars[sensor] = 0
+        for sense in dirmod:
+            xmod = dirmod[d][0]
+            ymod = dirmod[d][1]
+            obj = self.map[(self.player_pos[0] + xmod, self.player_pos[1] + ymod)]
+
+            if is_blocked(obj):
+                bot_vars[sense] = self.WALLTYPE
+            elif is_ghost(obj):
+                bot_vars[sense] = self.GHOSTTYPE
+            elif obj == self.DOT:
+                bot_vars[sense] = self.DOT
+            elif is_fruit(obj):
+                bot_vars[sense] = self.FRUITTYPE
+            elif obj == self.ENERGIZER:
+                bot_vars[sense] = self.POWER
+
+            # object could be wall, empty, dot, energizer, ghost, fruit
+            bot_vars[sense] = None
 
         bot_vars['lives'] = self.lives
 
