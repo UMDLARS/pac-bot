@@ -67,7 +67,7 @@ class PacBot(Game):
 
     PLAYER = '@'
     EMPTY = '\0'
-    APPLE = 'O'
+    # APPLE = 'O'
     FULL = chr(224)
     DOT = chr(225)
     POWER = chr(226)
@@ -98,10 +98,8 @@ class PacBot(Game):
     KEY = chr(247)
     STAR = chr(43)
     FRUITS = [CHERRY, STRAWBERRY, ORANGE, ORANGE, APPLE, APPLE, MELON, MELON, GALAXIAN, GALAXIAN, BELL, BELL, KEY]
-    FRUIT_POINTS = {CHERRY: 100, STRAWBERRY: 300, ORANGE: 500, 
-            ORANGE: 500, APPLE: 700, APPLE: 700, MELON: 1000, 
-            MELON: 1000, GALAXIAN: 2000, GALAXIAN: 2000, 
-            BELL: 3000, BELL: 3000, KEY: 5000}
+    FRUIT_POINTS = {CHERRY: 100, STRAWBERRY: 300, ORANGE: 500, APPLE: 700,
+                    MELON: 1000, GALAXIAN: 2000, BELL: 3000, KEY: 5000}
 
     # points
     DOT_POINTS = 10
@@ -112,6 +110,8 @@ class PacBot(Game):
     WALLTYPE = 1000
     GHOSTTYPE = 1001
     FRUITTYPE = 1002
+    GHOST = 256
+    FRUIT = 257
 
     def __init__(self, random):
         self.sensor_coords = [] # variables for adjustable sensors from LP
@@ -548,17 +548,17 @@ class PacBot(Game):
             obj = self.map[(self.player_pos[0] + xmod, self.player_pos[1] + ymod)]
 
             if self.is_blocked(obj):
-                bot_vars[sense] = self.PIPE
+                bot_vars[sense] = ord(self.PIPE)
             elif self.is_ghost(obj):
-                bot_vars[sense] = self.BLINKY
+                bot_vars[sense] = self.GHOST
             elif self.is_fruit(obj):
-                bot_vars[sense] = self.CHERRY
+                bot_vars[sense] = self.FRUIT
             elif obj == self.DOT:
-                bot_vars[sense] = self.DOT
+                bot_vars[sense] = ord(self.DOT)
             elif obj == self.POWER:
-                bot_vars[sense] = self.POWER
+                bot_vars[sense] = ord(self.POWER)
             else:
-                bot_vars[sense] = self.EMPTY
+                bot_vars[sense] = ord(self.EMPTY)
 
         bot_vars['lives'] = self.lives
         bot_vars['energized'] = self.energized
@@ -593,29 +593,21 @@ class PacBot(Game):
     @staticmethod
     def get_move_consts():
         consts = Game.get_move_consts()
-#        consts.update({"teleport": ord("t")})
-        consts.update({"ghost": PacBot.BLINKY})
-        consts.update({"ghost": PacBot.INKY})
-        consts.update({"ghost": PacBot.PINKY})
-        consts.update({"ghost": PacBot.CLYDE})
+        consts.update({"ghost": PacBot.GHOST})
         consts.update({"dot": ord(PacBot.DOT)})
         consts.update({"power": ord(PacBot.POWER)})
         consts.update({"wall": ord(PacBot.PIPE)})
-        consts.update({"fruit": ord(PacBot.CHERRY)})
+        consts.update({"fruit": PacBot.FRUIT})
         return consts
 
     @staticmethod
     def get_move_names():
         names = Game.get_move_names()
-#        names.update({ord("t"): "teleport"})
-        names.update({ord(PacBot.DOT): "dot"})
-        names.update({ord(PacBot.POWER): "power"})
-        names.update({ord(PacBot.CHERRY): "fruit"})
-        names.update({ord(PacBot.PIPE): "wall"})
-        names.update({ord(PacBot.BLINKY): "ghost"})
-        names.update({ord(PacBot.INKY): "ghost"})
-        names.update({ord(PacBot.PINKY): "ghost"})
-        names.update({ord(PacBot.CLYDE): "ghost"})
+        names.update({PacBot.GHOST: "Ghost"})
+        names.update({ord(PacBot.DOT): "Dot"})
+        names.update({ord(PacBot.POWER): "Power"})
+        names.update({PacBot.FRUIT: "Fruit"})
+        names.update({ord(PacBot.PIPE): "Wall"})
         return names
 
     def get_score(self):
