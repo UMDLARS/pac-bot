@@ -41,11 +41,7 @@ class PacBot(Game):
     SENSE_DIST = 20
 
 
-    MAX_TURNS = 2000
-    FLYING_POINTS = 5
-    COIN_POINTS = 25
-    HOUSE_ODDS = 500 # e.g., 1/500
-
+    MAX_TURNS = 100
 
     # starting positions
     PLAYER_START_X = 14
@@ -106,6 +102,11 @@ class PacBot(Game):
             ORANGE: 500, APPLE: 700, APPLE: 700, MELON: 1000, 
             MELON: 1000, GALAXIAN: 2000, GALAXIAN: 2000, 
             BELL: 3000, BELL: 3000, KEY: 5000}
+
+    # points
+    DOT_POINTS = 10
+    POWER_POINTS = 50
+    GHOST_BASE_POINTS = 200
 
     # classes of objects for sensors
     WALLTYPE = 1000
@@ -213,7 +214,6 @@ class PacBot(Game):
                 ghost.pos[1] = self.CLYDE_START_Y
                 ghost.in_house = True
 
-
         self.redraw_ghosts()
 
 
@@ -302,19 +302,28 @@ class PacBot(Game):
             if this_ghost.pos[0] == x and this_ghost.pos[1] == y:
                 return this_ghost
 
+    def redraw_ghost(self, ghost):
+            
+        if ghost.alive:
+            if self.energized > 0:
+                # draw ghosts in blue to indicate edibility
+                self.map[(ghost.pos[0], ghost.pos[1])] = self.EDIBLE
+
+            else:
+                # otherwise use their color
+                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
+
     def redraw_ghosts(self):
         for g in self.ghosts:
             ghost = self.ghosts[g]
-            if ghost.alive:
-                if self.energized > 0:
-                    # draw ghosts in blue to indicate edibility
-                    self.map[(ghost.pos[0], ghost.pos[1])] = self.EDIBLE
+            self.redraw_ghost(ghost)
 
-                else:
-                    # otherwise use their color
-                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
 
     def move_ghost(self, ghost):
+
+        if ghost.alive == False:
+            return
+
         if ghost.mode == "chase":
             # chase pac-bot
             None
@@ -342,23 +351,32 @@ class PacBot(Game):
             item = self.map[(ghost.pos[0], ghost.pos[1] - 1)]
             if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("w")
-            
-            if DEBUG:
-                print("Open directions for %s are: %s" % (ghost.name, str(dirs)))
 
-            print("%s -- saved: %s" % (ghost.name, str(ghost.saved_object)))
-
+            print("choosing for %s:" % (ghost.name))
             if len(dirs) > 0:
 
-                direction = self.random.randint(0, len(dirs) - 1)
-                choice = dirs[direction]
+                # if current direction is available, keep going that way
+                # (this is historical ghost behavior)
+
+                if ghost.direction in dirs:
+                    
+                    choice = ghost.direction
+                    print("choice %s available" % (choice))
+
+                else:
+
+                    direction = self.random.randint(0, len(dirs) - 1)
+                    choice = dirs[direction]
+
+                    print("choice %s unavailable -- going random from %s (chose %s)" % (ghost.direction, dirs, choice))
+                    print("%s chose %s" % (ghost.name, choice))
+                    ghost.direction = choice
 
                 # if ghost saved an object, drop the object before
                 # moving the ghost to the new location, otherwise, 
                 # erase the ghost's current location
                 if ghost.saved_object:
                     self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
-                    print("%s dropped %d!" % (str(ghost.name), ord(ghost.saved_object)))
                     ghost.saved_object = None
                 else:
                     self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
@@ -377,17 +395,11 @@ class PacBot(Game):
                 # having the ghost "pick it up"
                 if self.map[(ghost.pos[0], ghost.pos[1])] != self.EMPTY:
                     ghost.saved_object = self.map[(ghost.pos[0], ghost.pos[1])]
-                    print("%s picked up %d!" % (str(ghost.name), ord(ghost.saved_object)))
                 
                 # if the ghost is just north of the door, set it so that
                 # they can't go back into the house
                 if self.map[(ghost.pos[0], ghost.pos[1] + 1)] == self.DOOR:
                     ghost.in_house = False
-
-                # draw the ghost into the map spot so that other ghosts
-                # won't share the same spot
-                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
-
 
         if ghost.pos[0] == 0 and ghost.pos[1] == 15:
             ghost.pos[0] = 28
@@ -395,10 +407,14 @@ class PacBot(Game):
             ghost.pos[0] = 1
 
 
-
-
+        # draw the ghost into the map spot so that other ghosts
+        # won't share the same spot
+        #self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
+        self.redraw_ghost(ghost)
 
     def handle_key(self, key):
+
+        print("in handle key")
 
         self.turns += 1
 
@@ -443,7 +459,9 @@ class PacBot(Game):
                 # anymore...
                 ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
                 ghost.alive = False
-                self.score += self.ghost_multiplier * 200
+                self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
+                if ghost.saved_object == self.DOT:
+                    self.score += self.DOT_POINTS
                 self.ghost_multiplier += 1
 
             else:
@@ -456,14 +474,12 @@ class PacBot(Game):
                 else:
                     self.reset_positions()
 
-
-
         # add score based on new position
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.DOT:
-            self.score += 10
+            self.score += self.DOT_POINTS
             self.pellets_eaten += 1
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
-            self.score += 50
+            self.score += self.POWER_POINTS
             self.energized = 50
             self.pellets_eaten += 1
 
@@ -487,19 +503,18 @@ class PacBot(Game):
             extra_life = True
             self.lives += 1
 
+        if self.player_pos[0] == 0 and self.player_pos[1] == 15:
+            self.player_pos[0] = 28
+        elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
+            self.player_pos[0] = 1
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
         self.redraw_lives()
 
         for g in self.ghosts:
             ghost = self.ghosts[g]
-            print("ghost: %s" % (ghost.name))
-            print("old position: %s" %(str(ghost.pos)))
             self.move_ghost(ghost)
-            print("new position: %s" %(str(ghost.pos)))
-            print("ghost contents: %s" % (str(ghost.saved_object)))
 
-        self.redraw_ghosts()
 
         if DEBUG:
             print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
@@ -508,6 +523,9 @@ class PacBot(Game):
         # affect the *next* turn...
         if DEBUG:
             print(self.get_vars_for_bot())
+        print("leaving handle_key")
+
+
 
     def is_running(self):
         return self.running
@@ -517,35 +535,50 @@ class PacBot(Game):
 
     def get_vars_for_bot(self):
 
+        print("in GFVB")
+
         bot_vars = {}
 
         # what borders player?
         dirmod = {'sense_w':[-1, 0], 'sense_e':[1, 0], 'sense_n':[0, -1], 'sense_s':[0, 1]}
 
         for sense in dirmod:
-            xmod = dirmod[d][0]
-            ymod = dirmod[d][1]
+            xmod = dirmod[sense][0]
+            ymod = dirmod[sense][1]
             obj = self.map[(self.player_pos[0] + xmod, self.player_pos[1] + ymod)]
 
-            if is_blocked(obj):
-                bot_vars[sense] = self.WALLTYPE
-            elif is_ghost(obj):
-                bot_vars[sense] = self.GHOSTTYPE
+            if self.is_blocked(obj):
+                bot_vars[sense] = self.PIPE
+            elif self.is_ghost(obj):
+                bot_vars[sense] = self.BLINKY
+            elif self.is_fruit(obj):
+                bot_vars[sense] = self.CHERRY
             elif obj == self.DOT:
                 bot_vars[sense] = self.DOT
-            elif is_fruit(obj):
-                bot_vars[sense] = self.FRUITTYPE
-            elif obj == self.ENERGIZER:
+            elif obj == self.POWER:
                 bot_vars[sense] = self.POWER
-
-            # object could be wall, empty, dot, energizer, ghost, fruit
-            bot_vars[sense] = None
+            else:
+                bot_vars[sense] = self.EMPTY
 
         bot_vars['lives'] = self.lives
+        bot_vars['energized'] = self.energized
+        bot_vars["dot_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[0]
+        bot_vars["dot_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[1]
+        bot_vars["power_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[0]
+        bot_vars["power_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[1]
+        bot_vars["blinky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[0]
+        bot_vars["blinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[1]
+        bot_vars["inky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))[0]
+        bot_vars["inky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))[1]
+        bot_vars["pinky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[0]
+        bot_vars["pinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[1]
+        bot_vars["clyde_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[0]
+        bot_vars["clyde_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[1]
 
         if DEBUG:
             print(bot_vars)
 
+        print("leaving GVFB")
         return bot_vars
 
     @staticmethod
@@ -560,13 +593,17 @@ class PacBot(Game):
     @staticmethod
     def get_move_consts():
         consts = Game.get_move_consts()
-        consts.update({"teleport": ord("t")})
+#        consts.update({"teleport": ord("t")})
+        consts.update({"ghost": PacBot.BLINKY})
+        consts.update({"dot": ord(PacBot.DOT)})
         return consts
 
     @staticmethod
     def get_move_names():
         names = Game.get_move_names()
-        names.update({ord("t"): "teleport"})
+#        names.update({ord("t"): "teleport"})
+        names.update({ord(PacBot.DOT): "dot"})
+        names.update({ord(PacBot.BLINKY): "ghost"})
         return names
 
     def get_score(self):
