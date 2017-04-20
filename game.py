@@ -595,7 +595,13 @@ class PacBot(Game):
         consts = Game.get_move_consts()
 #        consts.update({"teleport": ord("t")})
         consts.update({"ghost": PacBot.BLINKY})
+        consts.update({"ghost": PacBot.INKY})
+        consts.update({"ghost": PacBot.PINKY})
+        consts.update({"ghost": PacBot.CLYDE})
         consts.update({"dot": ord(PacBot.DOT)})
+        consts.update({"power": ord(PacBot.POWER)})
+        consts.update({"wall": ord(PacBot.PIPE)})
+        consts.update({"fruit": ord(PacBot.CHERRY)})
         return consts
 
     @staticmethod
@@ -603,7 +609,13 @@ class PacBot(Game):
         names = Game.get_move_names()
 #        names.update({ord("t"): "teleport"})
         names.update({ord(PacBot.DOT): "dot"})
+        names.update({ord(PacBot.POWER): "power"})
+        names.update({ord(PacBot.CHERRY): "fruit"})
+        names.update({ord(PacBot.PIPE): "wall"})
         names.update({ord(PacBot.BLINKY): "ghost"})
+        names.update({ord(PacBot.INKY): "ghost"})
+        names.update({ord(PacBot.PINKY): "ghost"})
+        names.update({ord(PacBot.CLYDE): "ghost"})
         return names
 
     def get_score(self):
@@ -616,7 +628,7 @@ class PacBot(Game):
             self.msg_panel.add("You are out of moves.")
         elif self.lives <= 0:
             self.running = False
-            self.msg_panel += ["You sustained too much damage!"]
+            self.msg_panel += ["GAME 0VER"]
             self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
 
         if not self.running:
