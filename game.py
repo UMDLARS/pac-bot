@@ -293,7 +293,9 @@ class PacBot(Game):
 
         # returns true if the cell in the map is obstructed
         
-        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(item):
+        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(item) or item == self.PLAYER:
+            # since ghosts use is_blocked, players need to be included
+            # in things that do not block motion. Strange but true!
             return False
         else:
             return True
@@ -320,6 +322,40 @@ class PacBot(Game):
             ghost = self.ghosts[g]
             self.redraw_ghost(ghost)
 
+    def check_ghost_collisions(self):
+        # detect collisions -- is there a ghost at player's location?
+        if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
+
+            # figure out which ghost the player has collided with to see
+            # if they are vulnerable
+            ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
+
+            if ghost.vulnerable > 0:
+
+                ghost.alive = False # ghost has been eaten!
+                self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
+
+                # check to see if ghost is "holding" a dot / power
+                if ghost.saved_object == self.DOT:
+                    self.score += self.DOT_POINTS
+                elif ghost.saved_object == self.POWER:
+                    self.score += self.POWER_POINTS
+
+                # increase the score multiplier for ghosts eaten in this
+                # round
+                self.ghost_multiplier += 1
+
+            else:
+                
+                # touching ghosts is bad for you
+                self.lives -= 1
+        
+                if self.lives == 0:
+                    self.running = False
+                else:
+                    self.reset_positions()
+
+
 
     def move_ghost(self, ghost):
 
@@ -345,15 +381,15 @@ class PacBot(Game):
 
             # determine which directions are open
             item = self.map[(ghost.pos[0] + 1, ghost.pos[1])]
-            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
+            if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("d")
             
             item = self.map[(ghost.pos[0] - 1, ghost.pos[1])]
-            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
+            if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("a")
             
             item = self.map[(ghost.pos[0], ghost.pos[1] + 1)]
-            if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
+            if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("s")
             
             item = self.map[(ghost.pos[0], ghost.pos[1] - 1)]
@@ -415,12 +451,14 @@ class PacBot(Game):
         elif ghost.pos[0] == 29 and ghost.pos[1] == 15:
             ghost.pos[0] = 1
 
+
         ghost.vulnerable -= 1 # draw down the time the ghost is vulnerable
 
         # draw the ghost into the map spot so that other ghosts
         # won't share the same spot
         #self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
         self.redraw_ghost(ghost)
+        self.check_ghost_collisions()
 
     def handle_key(self, key):
 
@@ -461,28 +499,7 @@ class PacBot(Game):
             self.running = False
             return
 
-        # detect ghost collisions
-        if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
-            if self.energized > 0:
-                
-                # which ghost did I eat? ghosts aren't just map objects
-                # anymore...
-                ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
-                ghost.alive = False # ghost has been eaten!
-                self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
-                if ghost.saved_object == self.DOT:
-                    self.score += self.DOT_POINTS
-                self.ghost_multiplier += 1
-
-            else:
-                
-                # touching ghosts is bad for you
-                self.lives -= 1
-        
-                if self.lives == 0:
-                    self.running = False
-                else:
-                    self.reset_positions()
+        self.check_ghost_collisions()
 
         # add score based on new position
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.DOT:
