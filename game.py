@@ -21,6 +21,7 @@ class Ghost:
         self.alive = True
         self.in_house = in_house # set to True by default
         self.saved_object = None # stores a map item we're "on top of"
+        self.vulnerable = 0
         self.mode = "frightened" # scatter, chase, or frightened
         #self.mode = None # scatter, chase, or frightened
 
@@ -105,6 +106,7 @@ class PacBot(Game):
     DOT_POINTS = 10
     POWER_POINTS = 50
     GHOST_BASE_POINTS = 200
+    ENERGIZED_TURNS = 50
 
     # classes of objects for sensors
     WALLTYPE = 1000
@@ -305,7 +307,7 @@ class PacBot(Game):
     def redraw_ghost(self, ghost):
             
         if ghost.alive:
-            if self.energized > 0:
+            if ghost.vulnerable > 0:
                 # draw ghosts in blue to indicate edibility
                 self.map[(ghost.pos[0], ghost.pos[1])] = self.EDIBLE
 
@@ -326,6 +328,8 @@ class PacBot(Game):
             # its starting location in the house. 
             ghost.pos[0] = ghost.start_x
             ghost.pos[1] = ghost.start_y
+            ghost.vulnerable = 0
+            ghost.alive = True
 
         if ghost.mode == "chase":
             # chase pac-bot
@@ -409,6 +413,7 @@ class PacBot(Game):
         elif ghost.pos[0] == 29 and ghost.pos[1] == 15:
             ghost.pos[0] = 1
 
+        ghost.vulnerable -= 1 # draw down the time the ghost is vulnerable
 
         # draw the ghost into the map spot so that other ghosts
         # won't share the same spot
@@ -483,7 +488,13 @@ class PacBot(Game):
             self.pellets_eaten += 1
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
             self.score += self.POWER_POINTS
-            self.energized = 50
+            self.energized = self.ENERGIZED_TURNS
+
+            # make all ghosts vulnerable
+            for g in self.ghosts:
+                ghost = self.ghosts[g]
+                ghost.vulnerable = self.ENERGIZED_TURNS
+
             self.pellets_eaten += 1
 
         # make fruit appear
