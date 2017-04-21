@@ -28,7 +28,7 @@ class Ghost:
 
 class PacBot(Game):
     MAP_WIDTH = 30
-    MAP_HEIGHT = 34
+    MAP_HEIGHT = 33
     SCREEN_WIDTH = MAP_WIDTH + 2
     SCREEN_HEIGHT = MAP_HEIGHT + 6
     MSG_START = 20
@@ -107,6 +107,7 @@ class PacBot(Game):
     POWER_POINTS = 50
     GHOST_BASE_POINTS = 200
     ENERGIZED_TURNS = 50
+    TOTAL_PELLETS = 253
 
     # classes of objects for sensors
     WALLTYPE = 1000
@@ -129,9 +130,8 @@ class PacBot(Game):
         self.objects = []
         self.turns = 0
         self.level = 0
-        self.msg_panel = MessagePanel(self.MSG_START, self.MAP_HEIGHT + 1, self.SCREEN_WIDTH - self.MSG_START, 5)
-        self.status_panel = StatusPanel(0, self.MAP_HEIGHT + 1, self.MSG_START, 5)
-        self.panels = [self.msg_panel, self.status_panel]
+        self.score_panel = StatusPanel(0, 0, self.MAP_WIDTH, 3)
+        self.panels = [self.score_panel]
         self.pellets_eaten = 0
 
 
@@ -168,12 +168,27 @@ class PacBot(Game):
 
     def redraw_lives(self):
 
-        # erase and redraw life count
-
-        for x in range(self.LIVES_START):
+        # erase status line
+        for x in range(self.MAP_WIDTH - 1):
             self.map[(1 + x, 33)] = self.EMPTY
+
+        # redraw lives
+        for x in range(self.LIVES_START):
             if self.lives > x:
                 self.map[(1 + x, 33)] = self.PLAYER
+
+#        # redraw the lower-right bar of fruits
+#        fruitlist = []
+#        print("level is: %d" % (self.level))
+#
+#        for level in range(self.level + 1):
+#            fruitlist.append(self.FRUITS[level])
+#
+#        x_start = self.MAP_WIDTH - 2 - len(fruitlist)
+#
+#        for fruit in fruitlist:
+#            self.map[(x_start, 33)] = fruit
+
 
 
     def reset_positions(self):
@@ -220,8 +235,8 @@ class PacBot(Game):
 
 
     def __create_map(self):
-        self.map = MapPanel(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT + 1, self.EMPTY,
-                            border=PanelBorder.create(bottom="-"))
+        self.map = MapPanel(0, 3, self.MAP_WIDTH, self.MAP_HEIGHT + 1, self.EMPTY)
+#                            border=PanelBorder.create(bottom="-"))
 
         self.panels += [self.map]
 
@@ -322,6 +337,7 @@ class PacBot(Game):
             ghost = self.ghosts[g]
             self.redraw_ghost(ghost)
 
+
     def check_ghost_collisions(self):
         # detect collisions -- is there a ghost at player's location?
         if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
@@ -338,8 +354,13 @@ class PacBot(Game):
                 # check to see if ghost is "holding" a dot / power
                 if ghost.saved_object == self.DOT:
                     self.score += self.DOT_POINTS
+                    self.pellets_eaten += 1
+                    ghost.saved_object = None
                 elif ghost.saved_object == self.POWER:
                     self.score += self.POWER_POINTS
+                    self.pellets_eaten += 1
+                    ghost.saved_object = None
+                
 
                 # increase the score multiplier for ghosts eaten in this
                 # round
@@ -508,6 +529,7 @@ class PacBot(Game):
         if self.map[(self.player_pos[0], self.player_pos[1])] == self.POWER:
             self.score += self.POWER_POINTS
             self.energized = self.ENERGIZED_TURNS
+            self.pellets_eaten += 1
 
             # make all ghosts vulnerable
             for g in self.ghosts:
@@ -527,7 +549,7 @@ class PacBot(Game):
         if item in self.FRUITS:
             self.score += self.FRUIT_POINTS[item]
 
-        if ((self.pellets_eaten % 249) == 0):
+        if ((self.pellets_eaten % self.TOTAL_PELLETS) == 0):
             self.level += 1
             self.pellets_eaten = 0
             self.__create_map()
@@ -650,20 +672,14 @@ class PacBot(Game):
         # End of the game
         if self.turns >= self.MAX_TURNS:
             self.running = False
-            self.msg_panel.add("You are out of moves.")
         elif self.lives <= 0:
             self.running = False
-            self.msg_panel += ["GAME 0VER"]
             self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
-
-        if not self.running:
-            self.msg_panel += ["GAME 0VER: Score:" + str(self.score)]
 
         libtcod.console_set_default_foreground(console, libtcod.white)
 
         # Update Status
-        self.status_panel["Score"] = self.score
-        self.status_panel["Move"] = str(self.turns) + " of " + str(self.MAX_TURNS)
+        self.score_panel["Score"] = self.score
 
         for panel in self.panels:
             panel.redraw(libtcod, console)
