@@ -8,17 +8,51 @@
 # WRECKAGE: When bots crash, they leave wreckage. The var 'junk_X' is set to 1 when wreckage is directly adjacent to the player (where X is one of n, s, e, w, ne, se, sw, or se).
 # The variable 'numbots' holds the number of bots left on the level.
 
-a = rand % 4
+randmove = 0
 
-if a is 0 {
-  move = east
+if move is 0 {
+    randmove = 1
 }
-if a is 1 {
-  move = west
+
+if move is east and sense_e is wall {
+
+    randmove = 1
 }
-if a is 2 {
-  move = north
+
+if move is west and sense_w is wall {
+
+    randmove = 1
 }
-if a is 3 {
-  move = south
+
+if move is north and sense_n is wall {
+
+    randmove = 1
 }
+
+if move is south and sense_s is wall {
+
+    randmove = 1
+}
+
+if randmove is 1 {
+
+    rnd = rand % 4
+
+    if rnd is 0 {
+      move = east
+    }
+    if rnd is 1 {
+      move = west
+    }
+    if rnd is 2 {
+      move = north
+    }
+    if rnd is 3 {
+      move = south
+    }
+
+} else {
+ 
+    move = move
+}
+

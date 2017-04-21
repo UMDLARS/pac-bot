@@ -41,7 +41,7 @@ class PacBot(Game):
     SENSE_DIST = 20
 
 
-    MAX_TURNS = 100
+    MAX_TURNS = 5000
 
     # starting positions
     PLAYER_START_X = 14
@@ -322,7 +322,10 @@ class PacBot(Game):
     def move_ghost(self, ghost):
 
         if ghost.alive == False:
-            return
+            # if the ghost is "dead" then we should teleport it back to
+            # its starting location in the house. 
+            ghost.pos[0] = ghost.start_x
+            ghost.pos[1] = ghost.start_y
 
         if ghost.mode == "chase":
             # chase pac-bot
@@ -458,7 +461,7 @@ class PacBot(Game):
                 # which ghost did I eat? ghosts aren't just map objects
                 # anymore...
                 ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
-                ghost.alive = False
+                ghost.alive = False # ghost has been eaten!
                 self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
                 if ghost.saved_object == self.DOT:
                     self.score += self.DOT_POINTS
