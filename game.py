@@ -48,7 +48,7 @@ class PacBot(Game):
     PLAYER_START_X = 14
     PLAYER_START_Y = 24
     BLINKY_START_X = 14
-    BLINKY_START_Y = 12
+    BLINKY_START_Y = 14
     # start in house for real
     PINKY_START_X = 14
     PINKY_START_Y = 15
@@ -138,7 +138,7 @@ class PacBot(Game):
         # array of ghost objects
         # ghosts use the functions in the PacBot object
         self.ghosts = {}
-        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y, in_house = False)
+        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
         self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.PINKY_START_X, self.PINKY_START_Y)
         self.ghosts['inky'] = Ghost("inky", self.INKY, self.INKY_START_X, self.INKY_START_Y)
         self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
@@ -200,20 +200,20 @@ class PacBot(Game):
             ghost.alive = True
             ghost.mode = "frightened" # FIXME should be 'scatter'
             if ghost.name == "blinky":
-                ghost.pos[0] = self.BLINKY_START_X
-                ghost.pos[1] = self.BLINKY_START_Y
-                ghost.in_house = False
+                ghost.pos[0] = ghost.start_x
+                ghost.pos[1] = ghost.start_y
+                ghost.in_house = True
             elif ghost.name == "pinky":
-                ghost.pos[0] = self.PINKY_START_X
-                ghost.pos[1] = self.PINKY_START_Y
+                ghost.pos[0] = ghost.start_x
+                ghost.pos[1] = ghost.start_y
                 ghost.in_house = True
             elif ghost.name == "inky":
-                ghost.pos[0] = self.INKY_START_X
-                ghost.pos[1] = self.INKY_START_Y
+                ghost.pos[0] = ghost.start_x
+                ghost.pos[1] = ghost.start_y
                 ghost.in_house = True
             elif ghost.name == "clyde":
-                ghost.pos[0] = self.CLYDE_START_X
-                ghost.pos[1] = self.CLYDE_START_Y
+                ghost.pos[0] = ghost.start_x
+                ghost.pos[1] = ghost.start_y
                 ghost.in_house = True
 
         self.redraw_ghosts()
@@ -330,6 +330,7 @@ class PacBot(Game):
             ghost.pos[1] = ghost.start_y
             ghost.vulnerable = 0
             ghost.alive = True
+            ghost.in_house = True
 
         if ghost.mode == "chase":
             # chase pac-bot
@@ -365,7 +366,7 @@ class PacBot(Game):
                 # if current direction is available, keep going that way
                 # (this is historical ghost behavior)
 
-                if ghost.direction in dirs:
+                if ghost.direction in dirs and ghost.in_house == False:
                     
                     choice = ghost.direction
                     print("choice %s available" % (choice))
@@ -378,6 +379,7 @@ class PacBot(Game):
                     print("choice %s unavailable -- going random from %s (chose %s)" % (ghost.direction, dirs, choice))
                     print("%s chose %s" % (ghost.name, choice))
                     ghost.direction = choice
+                    print("ghost %s choosing randomly: %s" % (ghost.name, choice))
 
                 # if ghost saved an object, drop the object before
                 # moving the ghost to the new location, otherwise, 
