@@ -709,4 +709,4 @@ class PacBot(Game):
 
 if __name__ == '__main__':
     from CYLGame import run
-    run(PacBot)
+    run(PacBot, avg_game_func=max)
