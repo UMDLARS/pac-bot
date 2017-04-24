@@ -549,7 +549,7 @@ class PacBot(Game):
         if item in self.FRUITS:
             self.score += self.FRUIT_POINTS[item]
 
-        if ((self.pellets_eaten % self.TOTAL_PELLETS) == 0):
+        if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
             self.level += 1
             self.pellets_eaten = 0
             self.__create_map()
@@ -617,6 +617,7 @@ class PacBot(Game):
 
         bot_vars['lives'] = self.lives
         bot_vars['energized'] = self.energized
+        bot_vars['level'] = self.level
         bot_vars["dot_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[0]
         bot_vars["dot_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[1]
         bot_vars["power_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[0]
@@ -629,6 +630,31 @@ class PacBot(Game):
         bot_vars["pinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[1]
         bot_vars["clyde_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[0]
         bot_vars["clyde_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[1]
+
+        # find closest fruit -- if one exists
+        cand_x = 0
+        cand_y = 0
+        bot_vars['fruit_x'] = 0
+        bot_vars['fruit_y'] = 0
+        lastfruit = None
+
+        for fruit in self.FRUITS:
+            
+            # if we've seen this fruit already, skip it
+            if fruit == lastfruit:
+                continue
+            else:
+                lastfruit = fruit
+            
+            
+            cand_x = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[0]
+            cand_y = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[1]
+
+            if cand_x != 0 or cand_y != 0:
+                bot_vars['fruit_x'] = cand_x
+                bot_vars['fruit_y'] = cand_y
+                break
+
 
         if DEBUG:
             print(bot_vars)
