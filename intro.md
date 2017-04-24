@@ -1,48 +1,37 @@
-# Robot Backcountry Skiing
+# Pac-Bot
 
-You're a robot skiing in the woods! Turn left or right to avoid obstacles. Don't crash!
+You're a robot in a very famous arcade game from the 1980s! Earn points by eating pellets. Don't touch the ghosts unless you've eaten an energizer recently! Eat fruits if they appear for a bonus. Go to the next level by eating all the pellets in the maze.
 
 # Rules
 
-Every turn you will move downhill one row and earn a point. You decide whether to go left, right, or stay straight ahead. 
+Here are some useful game rules:
 
-A variety of obstacles stand in your way; hitting them will deplete your hitpoints (available in the var `hp`). Hitting a `snowman` costs 1 point. Hitting a `tree` costs 2 points. Hitting a `rock` costs 10 points.
-
-You can add hitpoints by skiing over a `heart` or through a `house`.  Houses are extremely rare.
-
-You can gain 25 extra points by skiing over a `coin`. 
-
-You can fly through the air for a random number of turns by skiing over a rainbow colored `jump`. Each turn in flight is worth 5 points.
-
-The variable `flying` tells you how many more turns you'll be above the ground (0 means you will hit obstacles).
-
-You can teleport, but it costs a hitpoint (and is not guaranteed to put you in a safe position).
+ * Eat all the pellets in the level to go to the next map.
+ * Fruit bonuses increase on upper levels.
+ * Energizer pellets allow you to eat ghosts for 50 turns.
+ * Eating ghosts gives a score boost.
+ * Ghosts are disabled for a short time after they are eaten. 
 
 # Motion
 
-Available moves: `north`, `west`, `east`, and `teleport`.
+Available moves: `north`, `south`, `east`, and `west`.
 
 # Sensors
 
-Robot can access three types of information: variables, distance sensors, and configurable point sensors.
+Robot can access three types of information: variables, the player's x/y location in the maze, and distance sensors to various types of objects.
 
 ## Internal variables
 
 Your robot has access to two internal variables:
 
-`hp` -- your current number of hitpoints. You cannot have more than 10 HP.
+ * `lives` -- the number of lives
+ * `level` -- the game level (0 is the first level)
+ * `energized` -- the number of turns energized remaining (0 means not energized)
 
-`flying` -- your height above ground. You won't hit obstacles as long as flying is greater than 0. You fall one unit per turn.
+## Player position
+
+The position of the player in the map is available in the variables `player_x` and `player_y`. The upper-left corner of the visible screen is 0,0. Unlike in a traditional coordinates system, values increase as you move south (down the screen) and east (to the right). (This arrangement is common in video games.)
 
 ## Distance sensors
 
-Distance sensors tell you the `x` and `y` distance to the closest heart (`heart_x` and `heart_y`), coin (`coin_x` and `coin_y`), jump (`jump_x` and `jump_y`), or house (`house_x` and `house_y`). Just because it is the closest doesn't mean you can get to it. If there is no object in question (e.g., no house on the map) the sensors are set to `0`.
-
-For historical reasons, the coordinates (0,0) represent the upper-left corner of the screen in many graphics applications. This means that a negative `object_x` value means the object is to your left (west) and a negative `object_y` value means the object is ahead of you (to the north).
-
-## Configurable point sensors
-
-Your robot has seven configurable point sensors (`s1`, `s2`, `s3`, `s4`, `s5`, `s6`, and `s7`) that tell you what is located at that point on the map. Common values include: `0` (snow), `rock`, `tree`, `snowman`, `coin`, `heart`, `house`, or `jump`.
-
-You can choose where you want the sensor to "look" (relative to your own position) by setting the variables `sNx` and `sNy` (where `N` is the sensor number 1-7). For example, if you set `s1x` to 0 and `s1y` to -1, the sensor `s1` will tell you what is directly ahead of you. See the sample code for other examples.
-
+There are eight distance sensors that show the x and y relative distance between you and the item in question. The items are: `dot` (normal pellets), `power` (power pellets or energizers), `fruit` (the bonus items) and the four ghosts: `blinky`, `inky`, `pinky`, and `clyde`. For example, the variables telling you the x and y distance to the closest dot are named `dot_x` and `dot_y`.

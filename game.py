@@ -159,6 +159,14 @@ class PacBot(Game):
             self.map[(x,y)] = char
             x += 1
 
+    def print_game_over(self):
+        x = 10
+        y = 18
+        for char in "GAME OVER":
+            self.map[(x,y)] = char
+            x += 1
+
+
     def erase_ready(self):
         x = 12
         y = 18
@@ -193,6 +201,8 @@ class PacBot(Game):
 
     def reset_positions(self):
 
+        self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
+        
         self.player_pos[0] = self.PLAYER_START_X
         self.player_pos[1] = self.PLAYER_START_Y
 
@@ -370,12 +380,8 @@ class PacBot(Game):
                 
                 # touching ghosts is bad for you
                 self.lives -= 1
+                self.reset_positions()
         
-                if self.lives == 0:
-                    self.running = False
-                else:
-                    self.reset_positions()
-
 
 
     def move_ghost(self, ghost):
@@ -459,7 +465,7 @@ class PacBot(Game):
                 # if there is already something at the ghost's new
                 # location (a fruit, pellet, or energizer), save it by
                 # having the ghost "pick it up"
-                if self.map[(ghost.pos[0], ghost.pos[1])] != self.EMPTY:
+                if self.map[(ghost.pos[0], ghost.pos[1])] not in [self.EMPTY, self.PLAYER]:
                     ghost.saved_object = self.map[(ghost.pos[0], ghost.pos[1])]
                 
                 # if the ghost is just north of the door, set it so that
@@ -622,6 +628,8 @@ class PacBot(Game):
         bot_vars["dot_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[1]
         bot_vars["power_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[0]
         bot_vars["power_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[1]
+        bot_vars["player_x"] = self.player_pos[0]
+        bot_vars["player_y"] = self.player_pos[1]
         bot_vars["blinky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[0]
         bot_vars["blinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[1]
         bot_vars["inky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))[0]
@@ -700,7 +708,8 @@ class PacBot(Game):
             self.running = False
         elif self.lives <= 0:
             self.running = False
-            self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
+            self.print_game_over()
+            #self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
 
         libtcod.console_set_default_foreground(console, libtcod.white)
 
