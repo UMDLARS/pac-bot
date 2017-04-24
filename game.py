@@ -7,7 +7,7 @@ from CYLGame import StatusPanel
 from CYLGame import PanelBorder
 
 
-DEBUG = True
+DEBUG = False
 
 class Ghost:
 
@@ -423,7 +423,6 @@ class PacBot(Game):
             if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("w")
 
-            print("choosing for %s:" % (ghost.name))
             if len(dirs) > 0:
 
                 # if current direction is available, keep going that way
@@ -432,17 +431,13 @@ class PacBot(Game):
                 if ghost.direction in dirs and ghost.in_house == False:
                     
                     choice = ghost.direction
-                    print("choice %s available" % (choice))
 
                 else:
 
                     direction = self.random.randint(0, len(dirs) - 1)
                     choice = dirs[direction]
 
-                    print("choice %s unavailable -- going random from %s (chose %s)" % (ghost.direction, dirs, choice))
-                    print("%s chose %s" % (ghost.name, choice))
                     ghost.direction = choice
-                    print("ghost %s choosing randomly: %s" % (ghost.name, choice))
 
                 # if ghost saved an object, drop the object before
                 # moving the ghost to the new location, otherwise, 
@@ -488,8 +483,6 @@ class PacBot(Game):
         self.check_ghost_collisions()
 
     def handle_key(self, key):
-
-        print("in handle key")
 
         self.turns += 1
 
@@ -584,9 +577,6 @@ class PacBot(Game):
         # affect the *next* turn...
         if DEBUG:
             print(self.get_vars_for_bot())
-        print("leaving handle_key")
-
-
 
     def is_running(self):
         return self.running
@@ -595,8 +585,6 @@ class PacBot(Game):
         None
 
     def get_vars_for_bot(self):
-
-        print("in GFVB")
 
         bot_vars = {}
 
@@ -667,7 +655,6 @@ class PacBot(Game):
         if DEBUG:
             print(bot_vars)
 
-        print("leaving GVFB")
         return bot_vars
 
     @staticmethod
