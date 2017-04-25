@@ -548,26 +548,34 @@ class PacBot(Game):
         if item in self.FRUITS:
             self.score += self.FRUIT_POINTS[item]
 
+        # handle clearing the board
         if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
             self.level += 1
             self.pellets_eaten = 0
             self.__create_map()
 
+        # handle extra life
         if self.score >= 10000 and self.extra_life == False:
             extra_life = True
             self.lives += 1
 
+        # handle traveling through tunnels in either direction
         if self.player_pos[0] == 0 and self.player_pos[1] == 15:
             self.player_pos[0] = 28
         elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
             self.player_pos[0] = 1
 
+        # put the player in the new position
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+
+        # draw the life meter at the bottom
         self.redraw_lives()
 
-        for g in self.ghosts:
-            ghost = self.ghosts[g]
-            self.move_ghost(ghost)
+        # move ghosts -- speed based on level
+        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level > 2:
+            for g in self.ghosts:
+                ghost = self.ghosts[g]
+                self.move_ghost(ghost)
 
 
         if DEBUG:
