@@ -213,6 +213,8 @@ class PacBot(Game):
         for g in self.ghosts:
 
             ghost = self.ghosts[g]
+
+            ghost.vulnerable = 0
             
             # remove ghosts from their current locations on the map
             # make sure to drop anything they're "carrying"
@@ -266,6 +268,9 @@ class PacBot(Game):
                   'I': self.INKY,
                   'C': self.CLYDE}
 
+        # reset positions first so ghosts not in maze when filled
+        self.reset_positions()
+
         # open map file
         x = 0
         y = 0
@@ -278,7 +283,8 @@ class PacBot(Game):
                     x += 1
                 y += 1
         
-        self.reset_positions()
+        self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
+
         self.redraw_ghosts()
 
         self.redraw_lives()
