@@ -703,7 +703,7 @@ class PacBot(Game):
     def get_score(self):
         return self.score
 
-    def draw_screen(self, libtcod, console):
+    def draw_screen(self, frame_buffer):
         # End of the game
         if self.turns >= self.MAX_TURNS:
             self.running = False
@@ -712,13 +712,11 @@ class PacBot(Game):
             self.print_game_over()
             #self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
 
-        libtcod.console_set_default_foreground(console, libtcod.white)
-
         # Update Status
         self.score_panel["Score"] = self.score
 
         for panel in self.panels:
-            panel.redraw(libtcod, console)
+            panel.redraw(frame_buffer)
 
 
 if __name__ == '__main__':
