@@ -28,7 +28,7 @@ class Ghost:
 class PacBot(GridGame):
     MAP_WIDTH = 30
     MAP_HEIGHT = 33
-    SCREEN_WIDTH = MAP_WIDTH + 2
+    SCREEN_WIDTH = MAP_WIDTH
     SCREEN_HEIGHT = MAP_HEIGHT + 6
     MSG_START = 20
     MAX_MSG_LEN = SCREEN_WIDTH - MSG_START - 1
