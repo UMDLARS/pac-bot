@@ -1,16 +1,15 @@
-from __future__ import print_function
-from CYLGame import GameLanguage
-from CYLGame import Game
-from CYLGame import MessagePanel
+from __future__ import print_function, division
+
+from CYLGame import GameLanguage, GridGame
 from CYLGame import MapPanel
 from CYLGame import StatusPanel
-from CYLGame import PanelBorder
+from CYLGame.Player import DefaultGridPlayer
 
 
 DEBUG = False
 
-class Ghost:
 
+class Ghost:
     def __init__(self, name, char, start_x, start_y, in_house=True):
         self.name = name
         self.char = char
@@ -19,14 +18,14 @@ class Ghost:
         self.pos = [start_x, start_y]
         self.direction = 'a'
         self.alive = True
-        self.in_house = in_house # set to True by default
-        self.saved_object = None # stores a map item we're "on top of"
+        self.in_house = in_house  # set to True by default
+        self.saved_object = None  # stores a map item we're "on top of"
         self.vulnerable = 0
-        self.mode = "frightened" # scatter, chase, or frightened
-        #self.mode = None # scatter, chase, or frightened
+        self.mode = "frightened"  # scatter, chase, or frightened
+        # self.mode = None # scatter, chase, or frightened
 
 
-class PacBot(Game):
+class PacBot(GridGame):
     MAP_WIDTH = 30
     MAP_HEIGHT = 33
     SCREEN_WIDTH = MAP_WIDTH + 2
@@ -40,7 +39,6 @@ class PacBot(Game):
     LIVES_START = 4
 
     SENSE_DIST = 20
-
 
     MAX_TURNS = 5000
 
@@ -57,14 +55,13 @@ class PacBot(Game):
     CLYDE_START_X = 16
     CLYDE_START_Y = 15
 
-#    # start in hallway for testing
-#    PINKY_START_X = 15
-#    PINKY_START_Y = 12
-#    INKY_START_X = 16
-#    INKY_START_Y = 12
-#    CLYDE_START_X = 17
-#    CLYDE_START_Y = 12
-
+    #    # start in hallway for testing
+    #    PINKY_START_X = 15
+    #    PINKY_START_Y = 12
+    #    INKY_START_X = 16
+    #    INKY_START_Y = 12
+    #    CLYDE_START_X = 17
+    #    CLYDE_START_Y = 12
 
     PLAYER = '@'
     EMPTY = '\0'
@@ -88,7 +85,7 @@ class PacBot(Game):
     EYES = chr(238)
     EDIBLE = chr(239)
 
-    #fruit
+    # fruit
     CHERRY = chr(240)
     STRAWBERRY = chr(241)
     ORANGE = chr(242)
@@ -117,11 +114,11 @@ class PacBot(Game):
     FRUIT = 257
 
     def __init__(self, random):
-        self.sensor_coords = [] # variables for adjustable sensors from LP
+        self.sensor_coords = []  # variables for adjustable sensors from LP
         self.random = random
         self.running = True
         self.colliding = False
-        self.energized = 0 # positive means energized for that many turns
+        self.energized = 0  # positive means energized for that many turns
         self.ghost_multiplier = 1
         self.lives = 3
         self.player_pos = [self.PLAYER_START_X, self.PLAYER_START_Y]
@@ -134,7 +131,6 @@ class PacBot(Game):
         self.panels = [self.score_panel]
         self.pellets_eaten = 0
 
-
         # array of ghost objects
         # ghosts use the functions in the PacBot object
         self.ghosts = {}
@@ -142,8 +138,8 @@ class PacBot(Game):
         self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.PINKY_START_X, self.PINKY_START_Y)
         self.ghosts['inky'] = Ghost("inky", self.INKY, self.INKY_START_X, self.INKY_START_Y)
         self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
-        
-        self.__create_map()
+
+        # self.__create_map()
 
     def get_fruit_for_level(self):
 
@@ -156,22 +152,21 @@ class PacBot(Game):
         x = 12
         y = 18
         for char in "READY!":
-            self.map[(x,y)] = char
+            self.map[(x, y)] = char
             x += 1
 
     def print_game_over(self):
         x = 10
         y = 18
         for char in "GAME OVER":
-            self.map[(x,y)] = char
+            self.map[(x, y)] = char
             x += 1
-
 
     def erase_ready(self):
         x = 12
         y = 18
         for char in "READY!":
-            self.map[(x,y)] = self.EMPTY
+            self.map[(x, y)] = self.EMPTY
             x += 1
 
     def redraw_lives(self):
@@ -185,24 +180,22 @@ class PacBot(Game):
             if self.lives > x:
                 self.map[(1 + x, 33)] = self.PLAYER
 
-#        # redraw the lower-right bar of fruits
-#        fruitlist = []
-#        print("level is: %d" % (self.level))
-#
-#        for level in range(self.level + 1):
-#            fruitlist.append(self.FRUITS[level])
-#
-#        x_start = self.MAP_WIDTH - 2 - len(fruitlist)
-#
-#        for fruit in fruitlist:
-#            self.map[(x_start, 33)] = fruit
-
-
+    #        # redraw the lower-right bar of fruits
+    #        fruitlist = []
+    #        print("level is: %d" % (self.level))
+    #
+    #        for level in range(self.level + 1):
+    #            fruitlist.append(self.FRUITS[level])
+    #
+    #        x_start = self.MAP_WIDTH - 2 - len(fruitlist)
+    #
+    #        for fruit in fruitlist:
+    #            self.map[(x_start, 33)] = fruit
 
     def reset_positions(self):
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
-        
+
         self.player_pos[0] = self.PLAYER_START_X
         self.player_pos[1] = self.PLAYER_START_Y
 
@@ -215,7 +208,7 @@ class PacBot(Game):
             ghost = self.ghosts[g]
 
             ghost.vulnerable = 0
-            
+
             # remove ghosts from their current locations on the map
             # make sure to drop anything they're "carrying"
             if ghost.saved_object:
@@ -225,7 +218,7 @@ class PacBot(Game):
                 self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
 
             ghost.alive = True
-            ghost.mode = "frightened" # FIXME should be 'scatter'
+            ghost.mode = "frightened"  # FIXME should be 'scatter'
             if ghost.name == "blinky":
                 ghost.pos[0] = ghost.start_x
                 ghost.pos[1] = ghost.start_y
@@ -245,10 +238,9 @@ class PacBot(Game):
 
         self.redraw_ghosts()
 
-
-    def __create_map(self):
+    def init_board(self):
         self.map = MapPanel(0, 3, self.MAP_WIDTH, self.MAP_HEIGHT + 1, self.EMPTY)
-#                            border=PanelBorder.create(bottom="-"))
+        #                            border=PanelBorder.create(bottom="-"))
 
         self.panels += [self.map]
 
@@ -282,7 +274,7 @@ class PacBot(Game):
                         self.map[(x, y)] = mapmap[char]
                     x += 1
                 y += 1
-        
+
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
 
         self.redraw_ghosts()
@@ -293,6 +285,18 @@ class PacBot(Game):
 
         if DEBUG:
             print(self.get_vars_for_bot())  # need sensors before turn
+
+    def create_new_player(self, prog):
+        self.player = DefaultGridPlayer(prog, self.get_move_consts())
+
+        return self.player
+
+    def start_game(self):
+        pass
+
+    def do_turn(self):
+        self.handle_key(self.player.move)
+        self.update_vars_for_player()
 
     def place_objects(self, char, count, replace=False):
         placed_objects = 0
@@ -321,10 +325,10 @@ class PacBot(Game):
             return False
 
     def is_blocked(self, item):
-
         # returns true if the cell in the map is obstructed
-        
-        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(item) or item == self.PLAYER:
+
+        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(
+                item) or item == self.PLAYER:
             # since ghosts use is_blocked, players need to be included
             # in things that do not block motion. Strange but true!
             return False
@@ -338,7 +342,6 @@ class PacBot(Game):
                 return this_ghost
 
     def redraw_ghost(self, ghost):
-            
         if ghost.alive:
             if ghost.vulnerable > 0:
                 # draw ghosts in blue to indicate edibility
@@ -353,7 +356,6 @@ class PacBot(Game):
             ghost = self.ghosts[g]
             self.redraw_ghost(ghost)
 
-
     def check_ghost_collisions(self):
         # detect collisions -- is there a ghost at player's location?
         if self.is_ghost(self.map[(self.player_pos[0], self.player_pos[1])]):
@@ -364,7 +366,7 @@ class PacBot(Game):
 
             if ghost.vulnerable > 0:
 
-                ghost.alive = False # ghost has been eaten!
+                ghost.alive = False  # ghost has been eaten!
                 self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
 
                 # check to see if ghost is "holding" a dot / power
@@ -376,22 +378,18 @@ class PacBot(Game):
                     self.score += self.POWER_POINTS
                     self.pellets_eaten += 1
                     ghost.saved_object = None
-                
 
                 # increase the score multiplier for ghosts eaten in this
                 # round
                 self.ghost_multiplier += 1
 
             else:
-                
+
                 # touching ghosts is bad for you
                 self.lives -= 1
                 self.reset_positions()
-        
-
 
     def move_ghost(self, ghost):
-
         if ghost.alive == False:
             # if the ghost is "dead" then we should teleport it back to
             # its starting location in the house. 
@@ -407,24 +405,24 @@ class PacBot(Game):
         elif ghost.mode == "scatter":
             # go to individual corners
             None
-        else: # mode is frightened
+        else:  # mode is frightened
             # run away from pac-bot
 
-            dirs = [] # list of directions we can go
+            dirs = []  # list of directions we can go
 
             # determine which directions are open
             item = self.map[(ghost.pos[0] + 1, ghost.pos[1])]
             if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("d")
-            
+
             item = self.map[(ghost.pos[0] - 1, ghost.pos[1])]
             if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("a")
-            
+
             item = self.map[(ghost.pos[0], ghost.pos[1] + 1)]
             if not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("s")
-            
+
             item = self.map[(ghost.pos[0], ghost.pos[1] - 1)]
             if ghost.in_house and item == self.DOOR or not self.is_blocked(item) and not self.is_ghost(item):
                 dirs.append("w")
@@ -435,7 +433,7 @@ class PacBot(Game):
                 # (this is historical ghost behavior)
 
                 if ghost.direction in dirs and ghost.in_house == False:
-                    
+
                     choice = ghost.direction
 
                 else:
@@ -468,7 +466,7 @@ class PacBot(Game):
                 # having the ghost "pick it up"
                 if self.map[(ghost.pos[0], ghost.pos[1])] not in [self.EMPTY, self.PLAYER]:
                     ghost.saved_object = self.map[(ghost.pos[0], ghost.pos[1])]
-                
+
                 # if the ghost is just north of the door, set it so that
                 # they can't go back into the house
                 if self.map[(ghost.pos[0], ghost.pos[1] + 1)] == self.DOOR:
@@ -479,12 +477,11 @@ class PacBot(Game):
         elif ghost.pos[0] == 29 and ghost.pos[1] == 15:
             ghost.pos[0] = 1
 
-
-        ghost.vulnerable -= 1 # draw down the time the ghost is vulnerable
+        ghost.vulnerable -= 1  # draw down the time the ghost is vulnerable
 
         # draw the ghost into the map spot so that other ghosts
         # won't share the same spot
-        #self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
+        # self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
         self.redraw_ghost(ghost)
         self.check_ghost_collisions()
 
@@ -492,11 +489,11 @@ class PacBot(Game):
 
         self.turns += 1
 
-        if self.energized > 0: # count down powered turns
+        if self.energized > 0:  # count down powered turns
             self.energized -= 1
             if self.energized == 0:
-                self.ghost_multiplier = 1 # reset for next time
-        
+                self.ghost_multiplier = 1  # reset for next time
+
         if self.pellets_eaten == 1:
             self.erase_ready()
 
@@ -545,9 +542,9 @@ class PacBot(Game):
 
         # make fruit appear
         if self.pellets_eaten == 70 or self.pellets_eaten == 170:
-            self.map[(14,18)] = self.get_fruit_for_level()
+            self.map[(14, 18)] = self.get_fruit_for_level()
         elif self.pellets_eaten == 120 or self.pellets_eaten == 220:
-            self.map[(14,18)] = self.EMPTY
+            self.map[(14, 18)] = self.EMPTY
 
         # handle eating fruit
         item = self.map[(self.player_pos[0], self.player_pos[1])]
@@ -558,7 +555,8 @@ class PacBot(Game):
         if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
             self.level += 1
             self.pellets_eaten = 0
-            self.__create_map()
+            self.init_board()
+            # self.__create_map()
 
         # handle extra life
         if self.score >= 10000 and self.extra_life == False:
@@ -583,10 +581,9 @@ class PacBot(Game):
                 ghost = self.ghosts[g]
                 self.move_ghost(ghost)
 
-
         if DEBUG:
             print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
-        
+
         # vars should be gotten at the end of handle_turn, because vars
         # affect the *next* turn...
         if DEBUG:
@@ -598,12 +595,11 @@ class PacBot(Game):
     def read_bot_state(self, state):
         None
 
-    def get_vars_for_bot(self):
-
+    def update_vars_for_player(self):
         bot_vars = {}
 
         # what borders player?
-        dirmod = {'sense_w':[-1, 0], 'sense_e':[1, 0], 'sense_n':[0, -1], 'sense_s':[0, 1]}
+        dirmod = {'sense_w': [-1, 0], 'sense_e': [1, 0], 'sense_n': [0, -1], 'sense_s': [0, 1]}
 
         for sense in dirmod:
             xmod = dirmod[sense][0]
@@ -649,14 +645,13 @@ class PacBot(Game):
         lastfruit = None
 
         for fruit in self.FRUITS:
-            
+
             # if we've seen this fruit already, skip it
             if fruit == lastfruit:
                 continue
             else:
                 lastfruit = fruit
-            
-            
+
             cand_x = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[0]
             cand_y = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[1]
 
@@ -665,11 +660,10 @@ class PacBot(Game):
                 bot_vars['fruit_y'] = cand_y
                 break
 
-
         if DEBUG:
             print(bot_vars)
 
-        return bot_vars
+        self.player.bot_vars = bot_vars
 
     @staticmethod
     def default_prog_for_bot(language):
@@ -682,23 +676,13 @@ class PacBot(Game):
 
     @staticmethod
     def get_move_consts():
-        consts = Game.get_move_consts()
+        consts = GridGame.get_move_consts()
         consts.update({"ghost": PacBot.GHOST})
         consts.update({"dot": ord(PacBot.DOT)})
         consts.update({"power": ord(PacBot.POWER)})
         consts.update({"wall": ord(PacBot.PIPE)})
         consts.update({"fruit": PacBot.FRUIT})
         return consts
-
-    @staticmethod
-    def get_move_names():
-        names = Game.get_move_names()
-        names.update({PacBot.GHOST: "Ghost"})
-        names.update({ord(PacBot.DOT): "Dot"})
-        names.update({ord(PacBot.POWER): "Power"})
-        names.update({PacBot.FRUIT: "Fruit"})
-        names.update({ord(PacBot.PIPE): "Wall"})
-        return names
 
     def get_score(self):
         return self.score
@@ -710,7 +694,7 @@ class PacBot(Game):
         elif self.lives <= 0:
             self.running = False
             self.print_game_over()
-            #self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
+            # self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
 
         # Update Status
         self.score_panel["Score"] = self.score
@@ -721,4 +705,5 @@ class PacBot(Game):
 
 if __name__ == '__main__':
     from CYLGame import run
+
     run(PacBot, avg_game_func=max)
