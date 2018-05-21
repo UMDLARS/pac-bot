@@ -107,9 +107,6 @@ class PacBot(GridGame):
     TOTAL_PELLETS = 253
 
     # classes of objects for sensors
-    WALLTYPE = 1000
-    GHOSTTYPE = 1001
-    FRUITTYPE = 1002
     GHOST = 256
     FRUIT = 257
 
