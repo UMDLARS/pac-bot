@@ -7,11 +7,12 @@ You're a robot in a very famous arcade game from the 1980s! Earn points by eatin
 Here are some useful game rules:
 
  * Eat all the pellets in the level to go to the next map.
- * Fruit bonuses increase on upper levels.
+ * Fruit bonuses increase in point value on upper levels.
  * Energizer pellets allow you to eat ghosts for 50 turns.
  * Eating ghosts gives a score boost.
  * Ghosts are disabled for a short time after they are eaten.
  * You lose a life if you are touched by a ghost.
+ * The game ends when you run out of lives (or turns).
 
 # Motion
 
@@ -19,22 +20,22 @@ Available moves: `north`, `south`, `east`, and `west`. Making a blocked move (mo
 
 # Game Objects
 
-The following items can appear in the game map:
- * `empty` -- empty space you can move through (if you can reach it)
+The following items can appear in the game map; you can use these as constants to test your sensors, etc. (see below):
  * `dot` -- a "standard" dot
  * `power` -- a "power pellet" -- worth more points and makes ghosts edible for 50 turns
- * `ghost` -- one of the four ghosts
+ * `wall` -- a barrier through which you cannot move
+ * `ghost` -- any one of the four ghosts (they currently act the same way)
  * `edible` -- a ghost made edible by a power pellet
  * `fruit` -- one of the periodically appearing fruit bonuses
+ * `empty` -- empty space you can move through (if you can reach it)
  * `player` -- you!
- * `wall` -- a barrier through which you cannot move
 
 # Accessing Game Data
 
 Robot has access to:
- * variables
- * automatic sensors
- * the map array
+ * variables -- variables that tell you about general game state
+ * automatic sensors -- things that change depending on where you are
+ * the map array -- the entire play field
 
 ## Internal variables
 
@@ -42,9 +43,9 @@ Your robot has access to the following internal variables:
 
  * `lives` -- the number of lives left
  * `level` -- the game level (0 is the first level)
- * `energized` -- the number of turns energized remaining (0 means not energized)
+ * `energized` -- the number of turns left after eating a power pellet when you can still eat ghosts (0 means not energized)
  * `map_width` and `map_height` -- the dimensions of the playfield.
- * `player_x` and `player_y` -- the position of the player in the map. Unlike the coordinate system you may have learned in math class, the **upper-left** corner of the map is (0,0). Values **increase** as you move south (down the screen) and east (to the right). Thus, the **lower-right** corner of the map is (`map_width`, `map_height`) This arrangement is common in computer graphics.
+ * `player_x` and `player_y` -- the position of the player in the map (see below).
 
 ## Automatic Sensors
 ### Directional Sensors
@@ -55,4 +56,8 @@ There are eight distance sensors that show the x and y relative distance between
 
 ## Map Array
 
-The map array, a two-dimesional array `map_array` contains the entire playfield. To access it, use `map_array[x][y]` where `x` and `y` specify the exact cell you want to examine. Using nested for loops, you can search the entire map. `map_array[0][0]` contains the upper-left corner of the map, while `map_array[map_width][map_height]` contains the lower-right corner of the map. Items in the map array can by anything from the Game Objects list above. (All ghosts and walls behave the same, so they are simply called `ghost` and `wall`.)
+The map array, a two-dimesional array `map_array` contains the entire playfield. To access it, use `map_array[x][y]` where `x` and `y` specify the exact cell you want to examine. Using nested for loops, you can search the entire map.  
+
+Unlike the coordinate system you may have learned in math class, the **upper-left** corner of the map is (0,0). Values **increase** as you move south (down the screen) and east (to the right). Thus, the **lower-right** corner of the map is (`map_width`, `map_height`) This arrangement is common in computer graphics.
+
+For example, `map_array[0][0]` contains the upper-left corner of the map, while `map_array[map_width][map_height]` contains the lower-right corner of the map. `map_array[player_x][player_y]` should always contain `player`, since that's your location! Items in the map array can by anything from the Game Objects list above. (All ghosts and walls behave the same, so they are simply called `ghost` and `wall`.)
