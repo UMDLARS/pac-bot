@@ -33,6 +33,7 @@ The following items can appear in the game map; you can use these as constants t
 # Accessing Game Data
 
 Robot has access to the following information:
+
  * variables -- variables that tell you about general game state
  * automatic sensors -- things that change depending on where you are
  * the map array -- the entire play field
