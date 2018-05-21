@@ -21,6 +21,7 @@ Available moves: `north`, `south`, `east`, and `west`. Making a blocked move (mo
 # Game Objects
 
 The following items can appear in the game map; you can use these as constants to test your sensors, etc. (see below):
+
  * `DOT` -- a "standard" dot
  * `POWER` -- a "power pellet" -- worth more points and makes ghosts edible for 50 turns
  * `WALL` -- a barrier through which you cannot move
