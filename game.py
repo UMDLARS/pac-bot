@@ -70,7 +70,7 @@ class PacBot(GridGame):
     DOT = chr(225)
     POWER = chr(226)
     DOOR = chr(227)
-    PIPE = chr(228)
+    WALL = chr(228)
     HYPHEN = chr(229)
     J = chr(230)
     L = chr(231)
@@ -244,7 +244,7 @@ class PacBot(GridGame):
 
         self.panels += [self.map]
 
-        mapmap = {'|': self.PIPE,
+        mapmap = {'|': self.WALL,
                   '-': self.HYPHEN,
                   'L': self.L,
                   '7': self.SEVEN,
@@ -327,8 +327,7 @@ class PacBot(GridGame):
     def is_blocked(self, item):
         # returns true if the cell in the map is obstructed
 
-        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(
-                item) or item == self.PLAYER:
+        if item == self.DOT or item == self.POWER or item == self.EMPTY or self.is_ghost(item) or self.is_fruit(item) or item == self.PLAYER:
             # since ghosts use is_blocked, players need to be included
             # in things that do not block motion. Strange but true!
             return False
@@ -595,6 +594,21 @@ class PacBot(GridGame):
     def read_bot_state(self, state):
         None
 
+    def get_map_array_tuple(self):
+        map_arr = []
+        for w in range(0, self.MAP_WIDTH):
+            w_arr = []
+            for h in range(0, self.MAP_HEIGHT):
+                item = self.map.p_to_char[(w,h)]
+                if self.is_blocked(item):
+                    item = ord(self.WALL)
+                else:
+                    item = ord(item)
+                w_arr.append(item)
+            map_arr.append(tuple(w_arr))
+
+        return tuple(map_arr)
+
     def update_vars_for_player(self):
         bot_vars = {}
 
@@ -607,7 +621,7 @@ class PacBot(GridGame):
             obj = self.map[(self.player_pos[0] + xmod, self.player_pos[1] + ymod)]
 
             if self.is_blocked(obj):
-                bot_vars[sense] = ord(self.PIPE)
+                bot_vars[sense] = ord(self.WALL)
             elif self.is_ghost(obj):
                 bot_vars[sense] = self.GHOST
             elif self.is_fruit(obj):
@@ -619,6 +633,8 @@ class PacBot(GridGame):
             else:
                 bot_vars[sense] = ord(self.EMPTY)
 
+        bot_vars['map_width'] = self.MAP_WIDTH
+        bot_vars['map_height'] = self.MAP_HEIGHT
         bot_vars['lives'] = self.lives
         bot_vars['energized'] = self.energized
         bot_vars['level'] = self.level
@@ -636,6 +652,8 @@ class PacBot(GridGame):
         bot_vars["pinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[1]
         bot_vars["clyde_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[0]
         bot_vars["clyde_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[1]
+
+        bot_vars["map_array"] = self.get_map_array_tuple()
 
         # find closest fruit -- if one exists
         cand_x = 0
@@ -677,11 +695,25 @@ class PacBot(GridGame):
     @staticmethod
     def get_move_consts():
         consts = GridGame.get_move_consts()
-        consts.update({"ghost": PacBot.GHOST})
-        consts.update({"dot": ord(PacBot.DOT)})
-        consts.update({"power": ord(PacBot.POWER)})
-        consts.update({"wall": ord(PacBot.PIPE)})
-        consts.update({"fruit": PacBot.FRUIT})
+        consts.update({"DOT": ord(PacBot.DOT)})
+        consts.update({"POWER": ord(PacBot.POWER)})
+        consts.update({"WALL": ord(PacBot.WALL)})
+        consts.update({"GHOST": ord(PacBot.INKY)})
+        consts.update({"GHOST": ord(PacBot.PINKY)})
+        consts.update({"GHOST": ord(PacBot.BLINKY)})
+        consts.update({"GHOST": ord(PacBot.CLYDE)})
+        consts.update({"EDIBLE": ord(PacBot.EDIBLE)})
+        consts.update({"FRUIT": ord(PacBot.CHERRY)})
+        consts.update({"FRUIT": ord(PacBot.STRAWBERRY)})
+        consts.update({"FRUIT": ord(PacBot.ORANGE)})
+        consts.update({"FRUIT": ord(PacBot.BELL)})
+        consts.update({"FRUIT": ord(PacBot.APPLE)})
+        consts.update({"FRUIT": ord(PacBot.MELON)})
+        consts.update({"FRUIT": ord(PacBot.GALAXIAN)})
+        consts.update({"FRUIT": ord(PacBot.KEY)})
+        consts.update({"FRUIT": ord(PacBot.STAR)})
+        consts.update({"EMPTY": ord(PacBot.EMPTY)})
+        consts.update({"PLAYER": ord(PacBot.PLAYER)})
         return consts
 
     def get_score(self):

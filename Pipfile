@@ -1,9 +1,7 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
-
 
 [dev-packages]
 pytest = "*"
@@ -12,16 +10,11 @@ pygame = "*"
 pytest-runner = "*"
 pytest-cov = "*"
 
-
 [packages]
-
-cylgame = "==1.6.*"
-pygame = "==1.9.*"
+cylgame = "~=1.6.23"
+pygame = "~=1.9.3"
 greenlet = "*"
 gevent = "*"
 
 [requires]
-
 python_version = "3.6"
-
-
