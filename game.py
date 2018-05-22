@@ -4,6 +4,7 @@ from CYLGame import GameLanguage, GridGame
 from CYLGame import MapPanel
 from CYLGame import StatusPanel
 from CYLGame.Player import DefaultGridPlayer
+import sys
 
 
 DEBUG = False
@@ -107,8 +108,8 @@ class PacBot(GridGame):
     TOTAL_PELLETS = 253
 
     # classes of objects for sensors
-    GHOST = 256
-    FRUIT = 257
+    GHOST = chr(254)
+    FRUIT = chr(255)
 
     def __init__(self, random):
         self.sensor_coords = []  # variables for adjustable sensors from LP
@@ -596,15 +597,22 @@ class PacBot(GridGame):
         for w in range(0, self.MAP_WIDTH):
             w_arr = []
             for h in range(0, self.MAP_HEIGHT):
-                item = self.map.p_to_char[(w,h)]
+                item = self.map[(w,h)]
                 if self.is_blocked(item):
                     item = ord(self.WALL)
+                elif self.is_ghost(item):
+                    item = ord(self.GHOST)
+                elif self.is_fruit(item):
+                    item = ord(self.FRUIT)
                 else:
                     item = ord(item)
+
                 w_arr.append(item)
             map_arr.append(tuple(w_arr))
 
         return tuple(map_arr)
+
+    
 
     def update_vars_for_player(self):
         bot_vars = {}
@@ -620,9 +628,9 @@ class PacBot(GridGame):
             if self.is_blocked(obj):
                 bot_vars[sense] = ord(self.WALL)
             elif self.is_ghost(obj):
-                bot_vars[sense] = self.GHOST
+                bot_vars[sense] = ord(self.GHOST)
             elif self.is_fruit(obj):
-                bot_vars[sense] = self.FRUIT
+                bot_vars[sense] = ord(self.FRUIT)
             elif obj == self.DOT:
                 bot_vars[sense] = ord(self.DOT)
             elif obj == self.POWER:
@@ -695,11 +703,13 @@ class PacBot(GridGame):
         consts.update({"DOT": ord(PacBot.DOT)})
         consts.update({"POWER": ord(PacBot.POWER)})
         consts.update({"WALL": ord(PacBot.WALL)})
+        consts.update({"GHOST": ord(PacBot.GHOST)})
         consts.update({"GHOST": ord(PacBot.INKY)})
         consts.update({"GHOST": ord(PacBot.PINKY)})
         consts.update({"GHOST": ord(PacBot.BLINKY)})
         consts.update({"GHOST": ord(PacBot.CLYDE)})
         consts.update({"EDIBLE": ord(PacBot.EDIBLE)})
+        consts.update({"FRUIT": ord(PacBot.FRUIT)})
         consts.update({"FRUIT": ord(PacBot.CHERRY)})
         consts.update({"FRUIT": ord(PacBot.STRAWBERRY)})
         consts.update({"FRUIT": ord(PacBot.ORANGE)})
