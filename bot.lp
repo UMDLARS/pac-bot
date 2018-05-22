@@ -1,40 +1,43 @@
 # Robots Example Bot
 # Name: Example Bot
-# You must set move to teleport, east, west, south, north, northeast, northwest, southeast, or southwest to move in the respective directions.
-# Any invalid move will be taken as no move.
-# You have three types of sensors: stairs, bots, and wreckage
-# STAIRS: the stairs are pointed to by x_dir and y_dir
-# BOTS: You have 8 sensor zones; directly north, south, east and west of you and the remaining diagonal regions (sense_n, sense_e, sense_w, sense_s, sense_ne, sense_nw, sense_se, sense_sw). The value of the sensor is the distance to the closest bot in the sensor. (Please note LP supports the inequality operators >, <, >=, and <=.
-# WRECKAGE: When bots crash, they leave wreckage. The var 'junk_X' is set to 1 when wreckage is directly adjacent to the player (where X is one of n, s, e, w, ne, se, sw, or se).
-# The variable 'numbots' holds the number of bots left on the level.
+# Game: Pac-Bot -- eat the dots to clear the board; eat ghosts after power pellet!
+# Things in the game: DOT, POWER, WALL, GHOST, EDIBLE, FRUIT, EMPTY, PLAYER
+# Variables: lives, level, energized, map_width, map_height, player_x, player_y
+# Point Sensors: sense_n, sense_s, sense_e, sense_w
+# Closest Location (x/y) Sensors: dot, power, fruit, blinky, inky, pinky, clyde 
+#   e.g.: dot_x and dot_y contain the location of the closest dot relative to player
+# Map Array: map_array contains entire map state of things (see above)
+#   access using map_array[x][y] to see the thing at location (x,y)
+# See 'Intro' tab for more comprehensive documentation!
 
-randmove = 0
+randmove = 0 # by default we don't want to move randomly
 
 if move is 0 {
+    randmove = 1 # pick a random direction if we have never moved
+}
+
+
+# if there is a wall directly in front of us, pick a new random direction
+if move is east and sense_e is WALL {
     randmove = 1
 }
 
-if move is east and sense_e is wall {
-
+if move is west and sense_w is WALL {
     randmove = 1
 }
 
-if move is west and sense_w is wall {
-
+if move is north and sense_n is WALL {
     randmove = 1
 }
 
-if move is north and sense_n is wall {
-
+if move is south and sense_s is WALL {
     randmove = 1
 }
 
-if move is south and sense_s is wall {
-
-    randmove = 1
-}
-
+# what direction should we go?
 if randmove is 1 {
+
+	# we want to pick a random direction
 
     rnd = rand % 4
 
@@ -53,6 +56,7 @@ if randmove is 1 {
 
 } else {
  
-    move = move
+	# keep going in current direction
+    move = move # sets new value of move to previous value
 }
 

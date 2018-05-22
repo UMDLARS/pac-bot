@@ -3,6 +3,7 @@ from __future__ import print_function, division
 from CYLGame import GameLanguage, GridGame
 from CYLGame import MapPanel
 from CYLGame import StatusPanel
+from CYLGame.Game import ConstMapping
 from CYLGame.Player import DefaultGridPlayer
 import sys
 
@@ -597,18 +598,23 @@ class PacBot(GridGame):
         for w in range(0, self.MAP_WIDTH):
             w_arr = []
             for h in range(0, self.MAP_HEIGHT):
-                item = self.map[(w,h)]
-                if self.is_blocked(item):
-                    item = ord(self.WALL)
-                elif self.is_ghost(item):
-                    item = ord(self.GHOST)
-                elif self.is_fruit(item):
-                    item = ord(self.FRUIT)
-                else:
-                    item = ord(item)
-
-                w_arr.append(item)
+#                 item = self.map[(w,h)]
+#                 if self.is_blocked(item):
+#                     item = ord(self.WALL)
+#                 elif self.is_ghost(item):
+#                     item = ord(self.GHOST)
+#                 elif self.is_fruit(item):
+#                     item = ord(self.FRUIT)
+#                 else:
+#                     item = ord(item)
+# 
+#                 w_arr.append(item)
+#                item = ord(self.map.p_to_char[(w,h)])
+#                if self.is_blocked(chr(item)):
+#                    item = ord(self.WALL)
+                w_arr.append(ord(self.map.p_to_char[(w,h)]))
             map_arr.append(tuple(w_arr))
+            print(w_arr)
 
         return tuple(map_arr)
 
@@ -638,8 +644,6 @@ class PacBot(GridGame):
             else:
                 bot_vars[sense] = ord(self.EMPTY)
 
-        bot_vars['map_width'] = self.MAP_WIDTH
-        bot_vars['map_height'] = self.MAP_HEIGHT
         bot_vars['lives'] = self.lives
         bot_vars['energized'] = self.energized
         bot_vars['level'] = self.level
@@ -699,29 +703,34 @@ class PacBot(GridGame):
 
     @staticmethod
     def get_move_consts():
-        consts = GridGame.get_move_consts()
-        consts.update({"DOT": ord(PacBot.DOT)})
-        consts.update({"POWER": ord(PacBot.POWER)})
-        consts.update({"WALL": ord(PacBot.WALL)})
-        consts.update({"GHOST": ord(PacBot.GHOST)})
-        consts.update({"GHOST": ord(PacBot.INKY)})
-        consts.update({"GHOST": ord(PacBot.PINKY)})
-        consts.update({"GHOST": ord(PacBot.BLINKY)})
-        consts.update({"GHOST": ord(PacBot.CLYDE)})
-        consts.update({"EDIBLE": ord(PacBot.EDIBLE)})
-        consts.update({"FRUIT": ord(PacBot.FRUIT)})
-        consts.update({"FRUIT": ord(PacBot.CHERRY)})
-        consts.update({"FRUIT": ord(PacBot.STRAWBERRY)})
-        consts.update({"FRUIT": ord(PacBot.ORANGE)})
-        consts.update({"FRUIT": ord(PacBot.BELL)})
-        consts.update({"FRUIT": ord(PacBot.APPLE)})
-        consts.update({"FRUIT": ord(PacBot.MELON)})
-        consts.update({"FRUIT": ord(PacBot.GALAXIAN)})
-        consts.update({"FRUIT": ord(PacBot.KEY)})
-        consts.update({"FRUIT": ord(PacBot.STAR)})
-        consts.update({"EMPTY": ord(PacBot.EMPTY)})
-        consts.update({"PLAYER": ord(PacBot.PLAYER)})
-        return consts
+        return ConstMapping({"west": ord("a"),
+                             "east": ord("d"),
+                             "south": ord("s"),
+                             "north": ord("w"),
+                             "DOT": ord(PacBot.DOT),
+                             "POWER": ord(PacBot.POWER),
+                             "WALL": ord(PacBot.WALL),
+                             "GHOST": ord(PacBot.GHOST),
+                             "GHOST": ord(PacBot.INKY),
+                             "GHOST": ord(PacBot.PINKY),
+                             "GHOST": ord(PacBot.BLINKY),
+                             "GHOST": ord(PacBot.CLYDE),
+                             "EDIBLE": ord(PacBot.EDIBLE),
+                             "FRUIT": ord(PacBot.FRUIT),
+                             "FRUIT": ord(PacBot.CHERRY),
+                             "FRUIT": ord(PacBot.STRAWBERRY),
+                             "FRUIT": ord(PacBot.ORANGE),
+                             "FRUIT": ord(PacBot.BELL),
+                             "FRUIT": ord(PacBot.APPLE),
+                             "FRUIT": ord(PacBot.MELON),
+                             "FRUIT": ord(PacBot.GALAXIAN),
+                             "FRUIT": ord(PacBot.KEY),
+                             "FRUIT": ord(PacBot.STAR),
+                             "EMPTY": ord(PacBot.EMPTY),
+                             "PLAYER": ord(PacBot.PLAYER),
+                             "map_height": PacBot.MAP_HEIGHT,
+                             "map_width": PacBot.MAP_WIDTH,
+                             })
 
     def get_score(self):
         return self.score
