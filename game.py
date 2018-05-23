@@ -8,13 +8,15 @@ from CYLGame.Player import DefaultGridPlayer
 import sys
 
 
-DEBUG = False
+DEBUG = True
+DUMP_BOT_VARS = False
 
 
 class Ghost:
-    def __init__(self, name, char, start_x, start_y, in_house=True):
+    def __init__(self, name, char, edible_char, start_x, start_y, in_house=True):
         self.name = name
         self.char = char
+        self.edible_char = edible_char
         self.start_x = start_x
         self.start_y = start_y
         self.pos = [start_x, start_y]
@@ -84,6 +86,10 @@ class PacBot(GridGame):
     PINKY = chr(235)
     INKY = chr(236)
     CLYDE = chr(237)
+    EDIBLE_BLINKY = chr(218)
+    EDIBLE_PINKY = chr(219)
+    EDIBLE_INKY = chr(220)
+    EDIBLE_CLYDE = chr(221)
     EYES = chr(238)
     EDIBLE = chr(239)
 
@@ -133,10 +139,10 @@ class PacBot(GridGame):
         # array of ghost objects
         # ghosts use the functions in the PacBot object
         self.ghosts = {}
-        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
-        self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.PINKY_START_X, self.PINKY_START_Y)
-        self.ghosts['inky'] = Ghost("inky", self.INKY, self.INKY_START_X, self.INKY_START_Y)
-        self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
+        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.EDIBLE_BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
+        self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.EDIBLE_PINKY, self.PINKY_START_X, self.PINKY_START_Y)
+        self.ghosts['inky'] = Ghost("inky", self.INKY, self.EDIBLE_INKY, self.INKY_START_X, self.INKY_START_Y)
+        self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.EDIBLE_CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
 
         # self.__create_map()
 
@@ -282,8 +288,6 @@ class PacBot(GridGame):
 
         self.print_ready()
 
-        if DEBUG:
-            print(self.get_vars_for_bot())  # need sensors before turn
 
     def create_new_player(self, prog):
         self.player = DefaultGridPlayer(prog, self.get_move_consts())
@@ -312,7 +316,7 @@ class PacBot(GridGame):
                 placed_objects += 1
 
     def is_ghost(self, item):
-        if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE or item == self.EDIBLE:
+        if item == self.BLINKY or item == self.PINKY or item == self.INKY or item == self.CLYDE or item == self.EDIBLE_BLINKY or item == self.EDIBLE_PINKY or item == self.EDIBLE_INKY or item == self.EDIBLE_CLYDE:
             return True
         else:
             return False
@@ -342,11 +346,8 @@ class PacBot(GridGame):
     def redraw_ghost(self, ghost):
         if ghost.alive:
             if ghost.vulnerable > 0:
-                # draw ghosts in blue to indicate edibility
-                self.map[(ghost.pos[0], ghost.pos[1])] = self.EDIBLE
-
+                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.edible_char
             else:
-                # otherwise use their color
                 self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
 
     def redraw_ghosts(self):
@@ -479,7 +480,6 @@ class PacBot(GridGame):
 
         # draw the ghost into the map spot so that other ghosts
         # won't share the same spot
-        # self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
         self.redraw_ghost(ghost)
         self.check_ghost_collisions()
 
@@ -531,10 +531,12 @@ class PacBot(GridGame):
             self.energized = self.ENERGIZED_TURNS
             self.pellets_eaten += 1
 
-            # make all ghosts vulnerable
+            # make all ghosts vulnerable:
+
             for g in self.ghosts:
                 ghost = self.ghosts[g]
                 ghost.vulnerable = self.ENERGIZED_TURNS
+                self.redraw_ghosts()
 
             self.pellets_eaten += 1
 
@@ -584,8 +586,6 @@ class PacBot(GridGame):
 
         # vars should be gotten at the end of handle_turn, because vars
         # affect the *next* turn...
-        if DEBUG:
-            print(self.get_vars_for_bot())
 
     def is_running(self):
         return self.running
@@ -614,7 +614,6 @@ class PacBot(GridGame):
 #                    item = ord(self.WALL)
                 w_arr.append(ord(self.map.p_to_char[(w,h)]))
             map_arr.append(tuple(w_arr))
-            print(w_arr)
 
         return tuple(map_arr)
 
@@ -653,16 +652,45 @@ class PacBot(GridGame):
         bot_vars["power_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[1]
         bot_vars["player_x"] = self.player_pos[0]
         bot_vars["player_y"] = self.player_pos[1]
-        bot_vars["blinky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[0]
-        bot_vars["blinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))[1]
-        bot_vars["inky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))[0]
-        bot_vars["inky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))[1]
-        bot_vars["pinky_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[0]
-        bot_vars["pinky_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))[1]
-        bot_vars["clyde_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[0]
-        bot_vars["clyde_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))[1]
+        
+        # get locations for ghosts -- edible or not
+        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))
 
+        if offset[0] == 0 and offset[1] == 0:
+            # blinky doesn't exist, so he must be edible_blinky!
+            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_BLINKY, default=(0, 0))
+
+        bot_vars["blinky_x"] = offset[0]
+        bot_vars["blinky_y"] = offset[1]
+        
+        # rinse and repeat for other ghosts
+
+        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))
+
+        if offset[0] == 0 and offset[1] == 0:
+            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_INKY, default=(0, 0))
+
+        bot_vars["inky_x"] = offset[0]
+        bot_vars["inky_y"] = offset[1]
+        
+        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))
+
+        if offset[0] == 0 and offset[1] == 0:
+            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_PINKY, default=(0, 0))
+
+        bot_vars["pinky_x"] = offset[0]
+        bot_vars["pinky_y"] = offset[1]
+        
+        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))
+
+        if offset[0] == 0 and offset[1] == 0:
+            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_CLYDE, default=(0, 0))
+
+        bot_vars["clyde_x"] = offset[0]
+        bot_vars["clyde_y"] = offset[1]
+        
         bot_vars["map_array"] = self.get_map_array_tuple()
+
 
         # find closest fruit -- if one exists
         cand_x = 0
@@ -688,7 +716,17 @@ class PacBot(GridGame):
                 break
 
         if DEBUG:
-            print(bot_vars)
+            print("bot_vars:")
+            for key in bot_vars.keys():
+                if key != "map_array":
+                    print("%s : %s" % (key, bot_vars[key]))
+
+        if DUMP_BOT_VARS:
+            if "map_array" in bot_vars:
+                print("map_array:")
+                for row in bot_vars['map_array']:
+                    print(row)
+
 
         self.player.bot_vars = bot_vars
 
@@ -711,11 +749,15 @@ class PacBot(GridGame):
                              "POWER": ord(PacBot.POWER),
                              "WALL": ord(PacBot.WALL),
                              "GHOST": ord(PacBot.GHOST),
-                             "GHOST": ord(PacBot.INKY),
-                             "GHOST": ord(PacBot.PINKY),
-                             "GHOST": ord(PacBot.BLINKY),
-                             "GHOST": ord(PacBot.CLYDE),
+                             "INKY": ord(PacBot.INKY),
+                             "PINKY": ord(PacBot.PINKY),
+                             "BLINKY": ord(PacBot.BLINKY),
+                             "CLYDE": ord(PacBot.CLYDE),
                              "EDIBLE": ord(PacBot.EDIBLE),
+                             "EDIBLE_INKY": ord(PacBot.EDIBLE_INKY),
+                             "EDIBLE_PINKY": ord(PacBot.EDIBLE_PINKY),
+                             "EDIBLE_BLINKY": ord(PacBot.EDIBLE_BLINKY),
+                             "EDIBLE_CLYDE": ord(PacBot.EDIBLE_CLYDE),
                              "FRUIT": ord(PacBot.FRUIT),
                              "FRUIT": ord(PacBot.CHERRY),
                              "FRUIT": ord(PacBot.STRAWBERRY),
