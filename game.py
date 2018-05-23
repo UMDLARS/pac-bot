@@ -689,7 +689,8 @@ class PacBot(GridGame):
         bot_vars["clyde_x"] = offset[0]
         bot_vars["clyde_y"] = offset[1]
         
-        bot_vars["map_array"] = self.get_map_array_tuple()
+        # map_array is broken so why slow things down?
+        #bot_vars["map_array"] = self.get_map_array_tuple()
 
 
         # find closest fruit -- if one exists
