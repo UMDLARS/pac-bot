@@ -1,13 +1,11 @@
 # Robots Example Bot
 # Name: Example Bot
 # Game: Pac-Bot -- eat the dots to clear the board; eat ghosts after power pellet!
-# Things in the game: DOT, POWER, WALL, GHOST, EDIBLE, FRUIT, EMPTY, PLAYER
+# Things in the game: DOT, POWER, WALL, GHOST, FRUIT, EMPTY, PLAYER
 # Variables: lives, level, energized, map_width, map_height, player_x, player_y
 # Point Sensors: sense_n, sense_s, sense_e, sense_w
 # Closest Location (x/y) Sensors: dot, power, fruit, blinky, inky, pinky, clyde 
 #   e.g.: dot_x and dot_y contain the location of the closest dot relative to player
-# Map Array: map_array contains entire map state of things (see above)
-#   access using map_array[x][y] to see the thing at location (x,y)
 # See 'Intro' tab for more comprehensive documentation!
 
 randmove = 0 # by default we don't want to move randomly
