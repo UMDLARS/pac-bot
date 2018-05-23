@@ -340,8 +340,14 @@ class PacBot(GridGame):
 
     def redraw_ghost(self, ghost):
         if ghost.alive:
-            if ghost.vulnerable > 0:
+            if ghost.vulnerable > 10:
                 self.map[(ghost.pos[0], ghost.pos[1])] = ghost.edible_char
+            elif ghost.vulnerable > 0:
+                # blink to "warn" pac-bot of their impending switch
+                if self.turns % 2:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.edible_char
+                else:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
             else:
                 self.map[(ghost.pos[0], ghost.pos[1])] = ghost.char
 
