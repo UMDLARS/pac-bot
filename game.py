@@ -8,7 +8,7 @@ from CYLGame.Player import DefaultGridPlayer
 import sys
 
 
-DEBUG = True
+DEBUG = False
 DUMP_BOT_VARS = False
 
 
