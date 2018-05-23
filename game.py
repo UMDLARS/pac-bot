@@ -135,6 +135,7 @@ class PacBot(GridGame):
         self.score_panel = StatusPanel(0, 0, self.MAP_WIDTH, 3)
         self.panels = [self.score_panel]
         self.pellets_eaten = 0
+        self.fruit_visible = -1
 
         # array of ghost objects
         # ghosts use the functions in the PacBot object
@@ -262,6 +263,10 @@ class PacBot(GridGame):
 
         # reset positions first so ghosts not in maze when filled
         self.reset_positions()
+
+        # make fruit counter negative to eliminate the case when you
+        # switch levels when a fruit is visible
+        self.fruit_visible = -1
 
         # open map file
         x = 0
@@ -544,13 +549,20 @@ class PacBot(GridGame):
         # make fruit appear
         if self.pellets_eaten == 70 or self.pellets_eaten == 170:
             self.map[(14, 18)] = self.get_fruit_for_level()
-        elif self.pellets_eaten == 120 or self.pellets_eaten == 220:
+            self.fruit_visible = 50
+        
+        # make fruit disappear
+        if self.fruit_visible > 0:
+            self.fruit_visible = self.fruit_visible - 1
+            
+        if self.fruit_visible == 0:
             self.map[(14, 18)] = self.EMPTY
 
         # handle eating fruit
         item = self.map[(self.player_pos[0], self.player_pos[1])]
         if item in self.FRUITS:
             self.score += self.FRUIT_POINTS[item]
+            self.fruit_visible = 0
 
         # handle clearing the board
         if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
