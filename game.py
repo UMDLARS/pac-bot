@@ -185,17 +185,12 @@ class PacBot(GridGame):
             if self.lives > x:
                 self.map[(1 + x, 33)] = self.PLAYER
 
-    #        # redraw the lower-right bar of fruits
-    #        fruitlist = []
-    #        print("level is: %d" % (self.level))
-    #
-    #        for level in range(self.level + 1):
-    #            fruitlist.append(self.FRUITS[level])
-    #
-    #        x_start = self.MAP_WIDTH - 2 - len(fruitlist)
-    #
-    #        for fruit in fruitlist:
-    #            self.map[(x_start, 33)] = fruit
+        # redraw the lower-right bar of fruits
+
+        x = self.MAP_WIDTH - 2 - self.level + 1
+        for level in range(self.level + 1):
+            self.map[(x, 33)] = self.FRUITS[level]
+            x = x + 1
 
     def reset_positions(self):
 
