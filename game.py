@@ -573,7 +573,8 @@ class PacBot(GridGame):
 
         # handle extra life
         if self.score >= 10000 and self.extra_life == False:
-            extra_life = True
+            print ("Gave extra life!")
+            self.extra_life = True
             self.lives += 1
 
         # handle traveling through tunnels in either direction
