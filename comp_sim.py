@@ -13,4 +13,4 @@ game = PacBot
 compiler = Compiler()
 gamedb = GameDB(sys.argv[2])
 assert gamedb.is_comp_token(comp_token)
-sim_competition(compiler=compiler, game=game, gamedb=gamedb, token=comp_token, runs=50, debug=True, score_func=max)
+sim_competition(compiler=compiler, game=game, gamedb=gamedb, token=comp_token, runs=100, debug=True, score_func=max)
