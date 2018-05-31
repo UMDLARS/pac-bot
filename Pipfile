@@ -12,9 +12,6 @@ pytest-cov = "*"
 
 [packages]
 cylgame = "~=1.6.23"
-pygame = "~=1.9.3"
-greenlet = "*"
-gevent = "*"
 
 [requires]
 python_version = "3.6"
