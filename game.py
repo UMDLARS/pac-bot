@@ -598,6 +598,12 @@ class PacBot(GridGame):
         if DEBUG:
             print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
 
+        # End of the game
+        if self.turns >= self.MAX_TURNS:
+            self.running = False
+        elif self.lives <= 0:
+            self.running = False
+
         # vars should be gotten at the end of handle_turn, because vars
         # affect the *next* turn...
 
@@ -793,14 +799,8 @@ class PacBot(GridGame):
         return self.score
 
     def draw_screen(self, frame_buffer):
-        # End of the game
-        if self.turns >= self.MAX_TURNS:
-            self.running = False
-        elif self.lives <= 0:
-            self.running = False
+        if not self.running:
             self.print_game_over()
-            # self.map[(self.player_pos[0], self.player_pos[1])] = self.DEAD
-
         # Update Status
         self.score_panel["Score"] = self.score
 
