@@ -14,4 +14,4 @@ pytest-cov = "*"
 cylgame = "~=1.6.23"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
