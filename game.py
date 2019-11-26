@@ -131,6 +131,7 @@ class PacBot(GridGame):
         self.extra_life = False
         self.objects = []
         self.turns = 0
+        self.original_turn = 0 #For erase extra live
         self.level = 0
         self.score_panel = StatusPanel(0, 0, self.MAP_WIDTH, 3)
         self.panels = [self.score_panel]
@@ -174,6 +175,20 @@ class PacBot(GridGame):
         for char in "READY!":
             self.map[(x, y)] = self.EMPTY
             x += 1
+    def extra_live(self):
+       x = 12
+       y = 18
+       for char in "BONUS!":
+            self.map[(x,y)] = char
+            x += 1
+
+    def erase_extra_live(self):
+      x = 12
+      y = 18
+      for char in "BONUS!":
+           self.map[(x,y)] = self.EMPTY
+           x += 1
+
 
     def redraw_lives(self):
 
@@ -182,9 +197,22 @@ class PacBot(GridGame):
             self.map[(1 + x, 33)] = self.EMPTY
 
         # redraw lives
-        for x in range(self.LIVES_START):
-            if self.lives > x:
-                self.map[(1 + x, 33)] = self.PLAYER
+
+#      for x in range(self.LIVES_START):
+#            if self.lives > x:
+#                self.map[(1 + x, 33)] = self.PLAYER
+
+        if self.lives <= self.LIVES_START:
+                for x in range(self.LIVES_START):
+                      if self.lives > x:
+                          self.map[(1+x),33] = self.PLAYER
+
+        if self.lives > self.LIVES_START:
+                for x in range(self.LIVES_START):
+                      self.map[(1+x,33)] = self.PLAYER
+                for x in range(self.lives - self.LIVES_START):
+                      self.map[(5+x,33)] = self.PLAYER
+
 
         # redraw the lower-right bar of fruits
 
@@ -393,6 +421,7 @@ class PacBot(GridGame):
                 # touching ghosts is bad for you
                 self.lives -= 1
                 self.reset_positions()
+                self.redraw_lives() #redrawing lives
 
     def move_ghost(self, ghost):
         if ghost.alive == False:
@@ -554,15 +583,24 @@ class PacBot(GridGame):
         # make fruit disappear
         if self.fruit_visible > 0:
             self.fruit_visible = self.fruit_visible - 1
-            
+           
         if self.fruit_visible == 0:
             self.map[(14, 18)] = self.EMPTY
 
         # handle eating fruit
         item = self.map[(self.player_pos[0], self.player_pos[1])]
         if item in self.FRUITS:
+            self.extra_live()
+            self.extra_life = True
+            self.lives += 1 # add a life once a fruit is eaten
             self.score += self.FRUIT_POINTS[item]
             self.fruit_visible = 0
+            self.original_turn = self.turns
+            self.redraw_lives()
+
+        if self.turns == self.original_turn + 1:
+            self.erase_extra_live()
+
 
         # handle clearing the board
         if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
@@ -582,6 +620,8 @@ class PacBot(GridGame):
             self.player_pos[0] = 28
         elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
             self.player_pos[0] = 1
+
+
 
         # put the player in the new position
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
