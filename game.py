@@ -1,11 +1,13 @@
 from __future__ import print_function, division
 
+
 from CYLGame import GameLanguage, GridGame
 from CYLGame import MapPanel
 from CYLGame import StatusPanel
 from CYLGame.Game import ConstMapping
 from CYLGame.Player import DefaultGridPlayer
 import sys
+import random
 
 
 DEBUG = False
@@ -548,12 +550,22 @@ class PacBot(GridGame):
             self.player_pos[1] -= 1
 
         item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
+        if key == "s" and item == self.DOOR: 
+            if self.player_pos[0] == 14:
+                 self.player_pos[0] = random.randint(1,7)
+                 self.player_pos[1] = 15 # whenever pacbot enters the door, it will be teleported to another place.
+            elif self.player_pos[0] == 15:
+                 self.player_pos[0] = random.randint(24,30)
+                 self.player_pos[1] = 15
+
+        item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
         if key == "s" and not self.is_blocked(item):
             self.player_pos[1] += 1
 
         if key == "Q":
             self.running = False
             return
+
 
         self.check_ghost_collisions()
 
