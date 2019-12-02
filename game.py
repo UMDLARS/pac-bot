@@ -139,6 +139,7 @@ class PacBot(GridGame):
         self.panels = [self.score_panel]
         self.pellets_eaten = 0
         self.fruit_visible = -1
+        self.freeze_turns = 0 #The number of turns that ghosts will be freezed.
 
         # array of ghost objects
         # ghosts use the functions in the PacBot object
@@ -642,7 +643,7 @@ class PacBot(GridGame):
         self.redraw_lives()
 
         # move ghosts -- speed based on level
-        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level > 2:
+        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #not sure about this
             for g in self.ghosts:
                 ghost = self.ghosts[g]
                 self.move_ghost(ghost)
