@@ -251,6 +251,7 @@ class PacBot(GridGame):
 
             ghost.alive = True
             ghost.mode = "frightened"  # FIXME should be 'scatter'
+
             if ghost.name == "blinky":
                 ghost.pos[0] = ghost.start_x
                 ghost.pos[1] = ghost.start_y
@@ -442,6 +443,7 @@ class PacBot(GridGame):
         elif ghost.mode == "scatter":
             # go to individual corners
             None
+
         else:  # mode is frightened
             # run away from pac-bot
 
@@ -631,9 +633,16 @@ class PacBot(GridGame):
         # handle traveling through tunnels in either direction
         if self.player_pos[0] == 0 and self.player_pos[1] == 15:
             self.player_pos[0] = 28
+            self.freeze_turns += 1 #turns that applied to freeze ghosts
+            for ghost in self.ghosts:
+                if self.ghosts[ghost].mode != "frozen":
+                    self.ghosts[ghost].mode = "frozen"
         elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
             self.player_pos[0] = 1
-
+            self.freeze_turns += 1 #turns that applied to freeze ghosts
+            for ghost in self.ghosts:
+                if self.ghosts[ghost].mode != "frozen":
+                    self.ghosts[ghost].mode = "frozen"
 
 
         # put the player in the new position
@@ -643,10 +652,26 @@ class PacBot(GridGame):
         self.redraw_lives()
 
         # move ghosts -- speed based on level
-        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #not sure about this
+#        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #fixed ghosts not moving in round 3 
+#            for g in self.ghosts:
+#                ghost = self.ghosts[g]
+#                self.move_ghost(ghost)
+
+        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #fixed ghosts not moving in round 3 
             for g in self.ghosts:
-                ghost = self.ghosts[g]
-                self.move_ghost(ghost)
+                if self.ghosts[g].mode == "frozen":
+                    None
+                else:
+                    ghost = self.ghosts[g]
+                    self.move_ghost(ghost)
+            if self.freeze_turns > 0:
+                if self.level >= 2:
+                    self.freeze_turns -= 0.5
+                else:
+                    self.freeze_turns -= 1
+                if self.freeze_turns == 0:
+                    for g in self.ghosts:
+                       self.ghosts[g].mode = "frightened"    # freeze ghosts when the player runs a particular circuit
 
         if DEBUG:
             print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
