@@ -558,12 +558,14 @@ class PacBot(GridGame):
                  self.player_pos[0] = random.randint(1,7)
                  self.player_pos[1] = 15 # whenever pacbot enters the door, it will be teleported to another place.
             elif self.player_pos[0] == 15:
-                 self.player_pos[0] = random.randint(24,30)
+                 self.player_pos[0] = random.randint(24,28)
                  self.player_pos[1] = 15
-
-        item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
-        if key == "s" and not self.is_blocked(item):
+        elif key == "s" and not self.is_blocked(item):
             self.player_pos[1] += 1
+
+#        item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
+#        if key == "s" and not self.is_blocked(item):
+#            self.player_pos[1] += 1
 
         if key == "Q":
             self.running = False
