@@ -105,7 +105,8 @@ class PacBot(GridGame):
     GALAXIAN = chr(246)
     KEY = chr(247)
     STAR = chr(43)
-    FRUITS = [CHERRY, STRAWBERRY, ORANGE, ORANGE, APPLE, APPLE, MELON, MELON, GALAXIAN, GALAXIAN, BELL, BELL, KEY]
+    FRUITS = [CHERRY, STRAWBERRY, ORANGE, ORANGE, APPLE, APPLE,
+              MELON, MELON, GALAXIAN, GALAXIAN, BELL, BELL, KEY]
     FRUIT_POINTS = {CHERRY: 100, STRAWBERRY: 300, ORANGE: 500, APPLE: 700,
                     MELON: 1000, GALAXIAN: 2000, BELL: 3000, KEY: 5000}
 
@@ -133,21 +134,30 @@ class PacBot(GridGame):
         self.extra_life = False
         self.objects = []
         self.turns = 0
-        self.original_turn = 0 #For erase extra live
+        self.original_turn = 0  # For erase extra live
         self.level = 0
         self.score_panel = StatusPanel(0, 0, self.MAP_WIDTH, 3)
         self.panels = [self.score_panel]
         self.pellets_eaten = 0
         self.fruit_visible = -1
-        self.freeze_turns = 0 #The number of turns that ghosts will be freezed.
+        self.area_one = 0
+        self.area_two = 0
+        self.area_three = 0
+        self.area_four = 0
+        # The number of turns that ghosts will be freezed.
+        self.freeze_turns = 0
 
         # array of ghost objects
         # ghosts use the functions in the PacBot object
         self.ghosts = {}
-        self.ghosts['blinky'] = Ghost("blinky", self.BLINKY, self.EDIBLE_BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
-        self.ghosts['pinky'] = Ghost("pinky", self.PINKY, self.EDIBLE_PINKY, self.PINKY_START_X, self.PINKY_START_Y)
-        self.ghosts['inky'] = Ghost("inky", self.INKY, self.EDIBLE_INKY, self.INKY_START_X, self.INKY_START_Y)
-        self.ghosts['clyde'] = Ghost("clyde", self.CLYDE, self.EDIBLE_CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
+        self.ghosts['blinky'] = Ghost(
+            "blinky", self.BLINKY, self.EDIBLE_BLINKY, self.BLINKY_START_X, self.BLINKY_START_Y)
+        self.ghosts['pinky'] = Ghost(
+            "pinky", self.PINKY, self.EDIBLE_PINKY, self.PINKY_START_X, self.PINKY_START_Y)
+        self.ghosts['inky'] = Ghost(
+            "inky", self.INKY, self.EDIBLE_INKY, self.INKY_START_X, self.INKY_START_Y)
+        self.ghosts['clyde'] = Ghost(
+            "clyde", self.CLYDE, self.EDIBLE_CLYDE, self.CLYDE_START_X, self.CLYDE_START_Y)
 
         # self.__create_map()
 
@@ -178,20 +188,20 @@ class PacBot(GridGame):
         for char in "READY!":
             self.map[(x, y)] = self.EMPTY
             x += 1
+
     def extra_live(self):
-       x = 12
-       y = 18
-       for char in "BONUS!":
-            self.map[(x,y)] = char
+        x = 12
+        y = 18
+        for char in "BONUS!":
+            self.map[(x, y)] = char
             x += 1
 
     def erase_extra_live(self):
-      x = 12
-      y = 18
-      for char in "BONUS!":
-           self.map[(x,y)] = self.EMPTY
-           x += 1
-
+        x = 12
+        y = 18
+        for char in "BONUS!":
+            self.map[(x, y)] = self.EMPTY
+            x += 1
 
     def redraw_lives(self):
 
@@ -206,16 +216,15 @@ class PacBot(GridGame):
 #                self.map[(1 + x, 33)] = self.PLAYER
 
         if self.lives <= self.LIVES_START:
-                for x in range(self.LIVES_START):
-                      if self.lives > x:
-                          self.map[(1+x),33] = self.PLAYER
+            for x in range(self.LIVES_START):
+                if self.lives > x:
+                    self.map[(1+x), 33] = self.PLAYER
 
         if self.lives > self.LIVES_START:
-                for x in range(self.LIVES_START):
-                      self.map[(1+x,33)] = self.PLAYER
-                for x in range(self.lives - self.LIVES_START):
-                      self.map[(5+x,33)] = self.PLAYER
-
+            for x in range(self.LIVES_START):
+                self.map[(1+x, 33)] = self.PLAYER
+            for x in range(self.lives - self.LIVES_START):
+                self.map[(5+x, 33)] = self.PLAYER
 
         # redraw the lower-right bar of fruits
 
@@ -272,7 +281,8 @@ class PacBot(GridGame):
         self.redraw_ghosts()
 
     def init_board(self):
-        self.map = MapPanel(0, 3, self.MAP_WIDTH, self.MAP_HEIGHT + 1, self.EMPTY)
+        self.map = MapPanel(0, 3, self.MAP_WIDTH,
+                            self.MAP_HEIGHT + 1, self.EMPTY)
         #                            border=PanelBorder.create(bottom="-"))
 
         self.panels += [self.map]
@@ -319,7 +329,6 @@ class PacBot(GridGame):
         self.redraw_lives()
 
         self.print_ready()
-
 
     def create_new_player(self, prog):
         self.player = DefaultGridPlayer(prog, self.get_move_consts())
@@ -399,38 +408,86 @@ class PacBot(GridGame):
 
             # figure out which ghost the player has collided with to see
             # if they are vulnerable
-            ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
+            ghost = self.get_ghost_by_xy(
+                self.player_pos[0], self.player_pos[1])
 
             if ghost.vulnerable > 0:
 
-                ghost.alive = False  # ghost has been eaten!
-                self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
+                if self.player_pos[0] == 14 or self.player_pos[0] == 15:
+                    if self.player_pos[1] == 13:
+                        self.area_one = 0
+                        self.area_two = 0
+                        self.area_three = 0
+                        self.area_four = 0
+                        for y in range(3, 11):
+                            for x in range(3, 15):
+                                if self.map[(x, y)] == self.DOT:
+                                    self.area_one += 1  # upper left corner
 
-                # check to see if ghost is "holding" a dot / power
-                if ghost.saved_object == self.DOT:
-                    self.score += self.DOT_POINTS
-                    self.pellets_eaten += 1
-                    ghost.saved_object = None
-                elif ghost.saved_object == self.POWER:
-                    self.score += self.POWER_POINTS
-                    self.pellets_eaten += 1
-                    ghost.saved_object = None
+                        for y in range(22, 32):
+                            for x in range(3, 15):
+                                if self.map[(x, y)] == self.DOT:
+                                    self.area_two += 1  # lower left corner
 
-                # increase the score multiplier for ghosts eaten in this
-                # round
-                self.ghost_multiplier += 1
+                        for y in range(3, 11):
+                            for x in range(17, 29):
+                                if self.map[(x, y)] == self.DOT:
+                                    self.area_three += 1  # upper right corner
+
+                        for y in range(22, 32):
+                            for x in range(17, 29):
+                                if self.map[(x, y)] == self.DOT:
+                                    self.area_four += 1  # lower right corner
+
+                        large = self.area_one
+                        areas = [self.area_one, self.area_two,
+                                 self.area_three, self.area_four]
+                        for area in areas:
+                            if large < area:
+                                large = area
+
+                        if large == self.area_one:
+                            self.player_pos[0] = 7
+                            self.player_pos[1] = 6
+                        elif large == self.area_two:
+                            self.player_pos[0] = 7
+                            self.player_pos[1] = 27
+                        elif large == self.area_three:
+                            self.player_pos[0] = 22
+                            self.player_pos[1] = 6
+                        elif large == self.area_four:
+                            self.player_pos[0] = 22
+                            self.player_pos[1] = 27
+
+                else:
+                    ghost.alive = False  # ghost has been eaten!
+                    self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
+
+                    # check to see if ghost is "holding" a dot / power
+                    if ghost.saved_object == self.DOT:
+                        self.score += self.DOT_POINTS
+                        self.pellets_eaten += 1
+                        ghost.saved_object = None
+                    elif ghost.saved_object == self.POWER:
+                        self.score += self.POWER_POINTS
+                        self.pellets_eaten += 1
+                        ghost.saved_object = None
+
+                    # increase the score multiplier for ghosts eaten in this
+                    # round
+                    self.ghost_multiplier += 1
 
             else:
 
                 # touching ghosts is bad for you
                 self.lives -= 1
                 self.reset_positions()
-                self.redraw_lives() #redrawing lives
+                self.redraw_lives()  # redrawing lives
 
     def move_ghost(self, ghost):
         if ghost.alive == False:
             # if the ghost is "dead" then we should teleport it back to
-            # its starting location in the house. 
+            # its starting location in the house.
             ghost.pos[0] = ghost.start_x
             ghost.pos[1] = ghost.start_y
             ghost.vulnerable = 0
@@ -483,7 +540,7 @@ class PacBot(GridGame):
                     ghost.direction = choice
 
                 # if ghost saved an object, drop the object before
-                # moving the ghost to the new location, otherwise, 
+                # moving the ghost to the new location, otherwise,
                 # erase the ghost's current location
                 if ghost.saved_object:
                     self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
@@ -536,7 +593,8 @@ class PacBot(GridGame):
             self.erase_ready()
 
         if DEBUG:
-            print("turn: %d player started at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
+            print("turn: %d player started at (%d, %d)" %
+                  (self.turns, self.player_pos[0], self.player_pos[1]))
 
         self.map[(self.player_pos[0], self.player_pos[1])] = self.EMPTY
 
@@ -553,13 +611,91 @@ class PacBot(GridGame):
             self.player_pos[1] -= 1
 
         item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
-        if key == "s" and item == self.DOOR: 
-            if self.player_pos[0] == 14:
-                 self.player_pos[0] = random.randint(1,7)
-                 self.player_pos[1] = 15 # whenever pacbot enters the door, it will be teleported to another place.
-            elif self.player_pos[0] == 15:
-                 self.player_pos[0] = random.randint(24,30)
-                 self.player_pos[1] = 15
+#        if key == "s" and item == self.DOOR:
+#            if self.player_pos[0] == 14:
+#                 self.player_pos[0] = random.randint(1,7)
+#                 self.player_pos[1] = 15 # whenever pacbot enters the door, it will be teleported to another place.
+#            elif self.player_pos[0] == 15:
+#                 self.player_pos[0] = random.randint(24,30)
+#                 self.player_pos[1] = 15
+
+        if key == "s" and item == self.DOOR:
+            self.area_one = 0
+            self.area_two = 0
+            self.area_three = 0
+            self.area_four = 0
+            for y in range(3, 11):
+                for x in range(3, 15):
+                    if self.map[(x, y)] == self.DOT:
+                        self.area_one += 1  # upper left corner
+
+            for y in range(22, 32):
+                for x in range(3, 15):
+                    if self.map[(x, y)] == self.DOT:
+                        self.area_two += 1  # lower left corner
+
+            for y in range(3, 11):
+                for x in range(17, 29):
+                    if self.map[(x, y)] == self.DOT:
+                        self.area_three += 1  # upper right corner
+
+            for y in range(22, 32):
+                for x in range(17, 29):
+                    if self.map[(x, y)] == self.DOT:
+                        self.area_four += 1  # lower right corner
+
+            large = self.area_one
+            areas = [self.area_one, self.area_two,
+                     self.area_three, self.area_four]
+            for area in areas:
+                if large < area:
+                    large = area
+
+            if large == self.area_one:
+                self.player_pos[0] = 7
+                self.player_pos[1] = 6
+            elif large == self.area_two:
+                self.player_pos[0] = 7
+                self.player_pos[1] = 27
+            elif large == self.area_three:
+                self.player_pos[0] = 22
+                self.player_pos[1] = 6
+            elif large == self.area_four:
+                self.player_pos[0] = 22
+                self.player_pos[1] = 27
+
+            for g in self.ghosts:
+
+                ghost = self.ghosts[g]
+
+                # remove ghosts from their current locations on the map
+                # make sure to drop anything they're "carrying"
+                if ghost.saved_object:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
+                    ghost.saved_object = None
+                else:
+                    self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
+
+                ghost.alive = True
+                ghost.mode = "frightened"  # FIXME should be 'scatter'
+
+                if ghost.name == "blinky":
+                    ghost.pos[0] = ghost.start_x
+                    ghost.pos[1] = ghost.start_y
+                    ghost.in_house = True
+                elif ghost.name == "pinky":
+                    ghost.pos[0] = ghost.start_x
+                    ghost.pos[1] = ghost.start_y
+                    ghost.in_house = True
+                elif ghost.name == "inky":
+                    ghost.pos[0] = ghost.start_x
+                    ghost.pos[1] = ghost.start_y
+                    ghost.in_house = True
+                elif ghost.name == "clyde":
+                    ghost.pos[0] = ghost.start_x
+                    ghost.pos[1] = ghost.start_y
+                    ghost.in_house = True
+            self.redraw_ghosts()
 
         item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
         if key == "s" and not self.is_blocked(item):
@@ -568,7 +704,6 @@ class PacBot(GridGame):
         if key == "Q":
             self.running = False
             return
-
 
         self.check_ghost_collisions()
 
@@ -594,11 +729,11 @@ class PacBot(GridGame):
         if self.pellets_eaten == 70 or self.pellets_eaten == 170:
             self.map[(14, 18)] = self.get_fruit_for_level()
             self.fruit_visible = 50
-        
+
         # make fruit disappear
         if self.fruit_visible > 0:
             self.fruit_visible = self.fruit_visible - 1
-           
+
         if self.fruit_visible == 0:
             self.map[(14, 18)] = self.EMPTY
 
@@ -607,7 +742,7 @@ class PacBot(GridGame):
         if item in self.FRUITS:
             self.extra_live()
             self.extra_life = True
-            self.lives += 1 # add a life once a fruit is eaten
+            self.lives += 1  # add a life once a fruit is eaten
             self.score += self.FRUIT_POINTS[item]
             self.fruit_visible = 0
             self.original_turn = self.turns
@@ -615,7 +750,6 @@ class PacBot(GridGame):
 
         if self.turns == self.original_turn + 1:
             self.erase_extra_live()
-
 
         # handle clearing the board
         if (self.pellets_eaten != 0 and ((self.pellets_eaten % self.TOTAL_PELLETS) == 0)):
@@ -633,17 +767,16 @@ class PacBot(GridGame):
         # handle traveling through tunnels in either direction
         if self.player_pos[0] == 0 and self.player_pos[1] == 15:
             self.player_pos[0] = 28
-            self.freeze_turns += 1 #turns that applied to freeze ghosts
+            self.freeze_turns += 1  # turns that applied to freeze ghosts
             for ghost in self.ghosts:
                 if self.ghosts[ghost].mode != "frozen":
                     self.ghosts[ghost].mode = "frozen"
         elif self.player_pos[0] == 29 and self.player_pos[1] == 15:
             self.player_pos[0] = 1
-            self.freeze_turns += 1 #turns that applied to freeze ghosts
+            self.freeze_turns += 1  # turns that applied to freeze ghosts
             for ghost in self.ghosts:
                 if self.ghosts[ghost].mode != "frozen":
                     self.ghosts[ghost].mode = "frozen"
-
 
         # put the player in the new position
         self.map[(self.player_pos[0], self.player_pos[1])] = self.PLAYER
@@ -652,12 +785,12 @@ class PacBot(GridGame):
         self.redraw_lives()
 
         # move ghosts -- speed based on level
-#        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #fixed ghosts not moving in round 3 
+#        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #fixed ghosts not moving in round 3
 #            for g in self.ghosts:
 #                ghost = self.ghosts[g]
 #                self.move_ghost(ghost)
 
-        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2: #fixed ghosts not moving in round 3 
+        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2:  # fixed ghosts not moving in round 3
             for g in self.ghosts:
                 if self.ghosts[g].mode == "frozen":
                     None
@@ -671,10 +804,12 @@ class PacBot(GridGame):
                     self.freeze_turns -= 1
                 if self.freeze_turns == 0:
                     for g in self.ghosts:
-                       self.ghosts[g].mode = "frightened"    # freeze ghosts when the player runs a particular circuit
+                        # freeze ghosts when the player runs a particular circuit
+                        self.ghosts[g].mode = "frightened"
 
         if DEBUG:
-            print("turn: %d player ended at (%d, %d)" % (self.turns, self.player_pos[0], self.player_pos[1]))
+            print("turn: %d player ended at (%d, %d)" %
+                  (self.turns, self.player_pos[0], self.player_pos[1]))
 
         # End of the game
         if self.turns >= self.MAX_TURNS:
@@ -696,37 +831,37 @@ class PacBot(GridGame):
         for w in range(0, self.MAP_WIDTH):
             w_arr = []
             for h in range(0, self.MAP_HEIGHT):
-#                 item = self.map[(w,h)]
-#                 if self.is_blocked(item):
-#                     item = ord(self.WALL)
-#                 elif self.is_ghost(item):
-#                     item = ord(self.GHOST)
-#                 elif self.is_fruit(item):
-#                     item = ord(self.FRUIT)
-#                 else:
-#                     item = ord(item)
-# 
-#                 w_arr.append(item)
-#                item = ord(self.map.p_to_char[(w,h)])
-#                if self.is_blocked(chr(item)):
-#                    item = ord(self.WALL)
-                w_arr.append(ord(self.map.p_to_char[(w,h)]))
+                #                 item = self.map[(w,h)]
+                #                 if self.is_blocked(item):
+                #                     item = ord(self.WALL)
+                #                 elif self.is_ghost(item):
+                #                     item = ord(self.GHOST)
+                #                 elif self.is_fruit(item):
+                #                     item = ord(self.FRUIT)
+                #                 else:
+                #                     item = ord(item)
+                #
+                #                 w_arr.append(item)
+                #                item = ord(self.map.p_to_char[(w,h)])
+                #                if self.is_blocked(chr(item)):
+                #                    item = ord(self.WALL)
+                w_arr.append(ord(self.map.p_to_char[(w, h)]))
             map_arr.append(tuple(w_arr))
 
         return tuple(map_arr)
-
-    
 
     def update_vars_for_player(self):
         bot_vars = {}
 
         # what borders player?
-        dirmod = {'sense_w': [-1, 0], 'sense_e': [1, 0], 'sense_n': [0, -1], 'sense_s': [0, 1]}
+        dirmod = {'sense_w': [-1, 0], 'sense_e': [1, 0],
+                  'sense_n': [0, -1], 'sense_s': [0, 1]}
 
         for sense in dirmod:
             xmod = dirmod[sense][0]
             ymod = dirmod[sense][1]
-            obj = self.map[(self.player_pos[0] + xmod, self.player_pos[1] + ymod)]
+            obj = self.map[(self.player_pos[0] + xmod,
+                            self.player_pos[1] + ymod)]
 
             if self.is_blocked(obj):
                 bot_vars[sense] = ord(self.WALL)
@@ -744,52 +879,63 @@ class PacBot(GridGame):
         bot_vars['lives'] = self.lives
         bot_vars['energized'] = self.energized
         bot_vars['level'] = self.level
-        bot_vars["dot_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[0]
-        bot_vars["dot_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.DOT, default=(0, 0))[1]
-        bot_vars["power_x"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[0]
-        bot_vars["power_y"] = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.POWER, default=(0, 0))[1]
+        bot_vars["dot_x"] = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.DOT, default=(0, 0))[0]
+        bot_vars["dot_y"] = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.DOT, default=(0, 0))[1]
+        bot_vars["power_x"] = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.POWER, default=(0, 0))[0]
+        bot_vars["power_y"] = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.POWER, default=(0, 0))[1]
         bot_vars["player_x"] = self.player_pos[0]
         bot_vars["player_y"] = self.player_pos[1]
-        
+
         # get locations for ghosts -- edible or not
-        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.BLINKY, default=(0, 0))
+        offset = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.BLINKY, default=(0, 0))
 
         if offset[0] == 0 and offset[1] == 0:
             # blinky doesn't exist, so he must be edible_blinky!
-            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_BLINKY, default=(0, 0))
+            offset = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), self.EDIBLE_BLINKY, default=(0, 0))
 
         bot_vars["blinky_x"] = offset[0]
         bot_vars["blinky_y"] = offset[1]
-        
+
         # rinse and repeat for other ghosts
 
-        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.INKY, default=(0, 0))
+        offset = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.INKY, default=(0, 0))
 
         if offset[0] == 0 and offset[1] == 0:
-            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_INKY, default=(0, 0))
+            offset = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), self.EDIBLE_INKY, default=(0, 0))
 
         bot_vars["inky_x"] = offset[0]
         bot_vars["inky_y"] = offset[1]
-        
-        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.PINKY, default=(0, 0))
+
+        offset = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.PINKY, default=(0, 0))
 
         if offset[0] == 0 and offset[1] == 0:
-            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_PINKY, default=(0, 0))
+            offset = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), self.EDIBLE_PINKY, default=(0, 0))
 
         bot_vars["pinky_x"] = offset[0]
         bot_vars["pinky_y"] = offset[1]
-        
-        offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.CLYDE, default=(0, 0))
+
+        offset = self.map.get_x_y_dist_to_foo(
+            tuple(self.player_pos), self.CLYDE, default=(0, 0))
 
         if offset[0] == 0 and offset[1] == 0:
-            offset = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), self.EDIBLE_CLYDE, default=(0, 0))
+            offset = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), self.EDIBLE_CLYDE, default=(0, 0))
 
         bot_vars["clyde_x"] = offset[0]
         bot_vars["clyde_y"] = offset[1]
-        
-        # map_array is broken so why slow things down?
-        #bot_vars["map_array"] = self.get_map_array_tuple()
 
+        # map_array is broken so why slow things down?
+        # bot_vars["map_array"] = self.get_map_array_tuple()
 
         # find closest fruit -- if one exists
         cand_x = 0
@@ -806,8 +952,10 @@ class PacBot(GridGame):
             else:
                 lastfruit = fruit
 
-            cand_x = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[0]
-            cand_y = self.map.get_x_y_dist_to_foo(tuple(self.player_pos), fruit, default=(0, 0))[1]
+            cand_x = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), fruit, default=(0, 0))[0]
+            cand_y = self.map.get_x_y_dist_to_foo(
+                tuple(self.player_pos), fruit, default=(0, 0))[1]
 
             if cand_x != 0 or cand_y != 0:
                 bot_vars['fruit_x'] = cand_x
@@ -825,7 +973,6 @@ class PacBot(GridGame):
                 print("map_array:")
                 for row in bot_vars['map_array']:
                     print(row)
-
 
         self.player.bot_vars = bot_vars
 
