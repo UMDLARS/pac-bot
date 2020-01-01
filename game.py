@@ -116,6 +116,7 @@ class PacBot(GridGame):
     GHOST_BASE_POINTS = 200
     ENERGIZED_TURNS = 50
     TOTAL_PELLETS = 253
+    PELLETS = 253 # constant value assigned to TOTAL_PELLETS when new game is introduced.
 
     # classes of objects for sensors
     GHOST = chr(254)
@@ -281,6 +282,7 @@ class PacBot(GridGame):
         self.redraw_ghosts()
 
     def init_board(self):
+        self.TOTAL_PELLETS = self.PELLETS
         self.map = MapPanel(0, 3, self.MAP_WIDTH,
                             self.MAP_HEIGHT + 1, self.EMPTY)
         #                            border=PanelBorder.create(bottom="-"))
@@ -619,6 +621,17 @@ class PacBot(GridGame):
 #                 self.player_pos[0] = random.randint(24,30)
 #                 self.player_pos[1] = 15
 
+        if key == "s" and item == self.F:
+            if self.player_pos[1] == 6:
+                for x in range(2,28):
+                    if self.map[(x, 30)] == self.EMPTY:
+                        self.map[(x,30)] = self.DOT
+                        self.TOTAL_PELLETS += 1
+                if self.player_pos[0] == 8:
+                    self.player_pos[1] = 30
+                elif self.player_pos[0] == 20:
+                    self.player_pos[1] = 30
+
         if key == "s" and item == self.DOOR:
             self.area_one = 0
             self.area_two = 0
@@ -698,8 +711,21 @@ class PacBot(GridGame):
             self.redraw_ghosts()
 
         item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
+#        if key == "s" and not self.is_blocked(item):
+#            if key == "s" and item == self.DOOR:
+#                if self.player_pos[0] == 14:
+#                    self.player_pos[0] = random.randint(1, 7)
+#                    # whenever pacbot enters the door, it will be teleported to another place.
+#                    self.player_pos[1] = 15
+#                elif self.player_pos[0] == 15:
+#                    self.player_pos[0] = random.randint(24, 28)
+#                    self.player_pos[1] = 15
         if key == "s" and not self.is_blocked(item):
             self.player_pos[1] += 1
+
+#        item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
+#        if key == "s" and not self.is_blocked(item):
+#            self.player_pos[1] += 1
 
         if key == "Q":
             self.running = False
