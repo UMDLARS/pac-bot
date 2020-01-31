@@ -370,23 +370,39 @@ class PacBot(GridGame):
             ghost = self.get_ghost_by_xy(self.player_pos[0], self.player_pos[1])
 
             if ghost.vulnerable > 0:
+                if (self.player_pos[0] == 14 or self.player_pos[0] == 15) and self.player_pos[1] == 13:
+#                     if self.player_pos[1] == 13:
+                        self.player_pos[1] = 12   #fixed bug: Eating ghost and door.
+#                        if ghost.pos[0] == self.player_pos[0] and ghost.pos[1] == self.player_pos[1]:
+#                              ghost.alive = False
+#                              self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
+#                              if ghost_saved_object == self.DOT:
+#                                   self.score += self.DOT_POINTS
+#                                   self.pellets_eaten += 1
+#                                   ghost.saved_object = None
+#                              elif ghost.saved_object == self.POWER:
+#                                   self.score += self.POWER_POINTS
+#                                   self.pellets_eaten += 1
+#                                   ghost.saved_object = None
+#                              self.ghost_multiplier += 1
+                else:
+                     ghost.alive = False  # ghost has been eaten!
+                     self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
 
-                ghost.alive = False  # ghost has been eaten!
-                self.score += self.ghost_multiplier * self.GHOST_BASE_POINTS
 
-                # check to see if ghost is "holding" a dot / power
-                if ghost.saved_object == self.DOT:
-                    self.score += self.DOT_POINTS
-                    self.pellets_eaten += 1
-                    ghost.saved_object = None
-                elif ghost.saved_object == self.POWER:
-                    self.score += self.POWER_POINTS
-                    self.pellets_eaten += 1
-                    ghost.saved_object = None
+                     # check to see if ghost is "holding" a dot / power
+                     if ghost.saved_object == self.DOT:
+                        self.score += self.DOT_POINTS
+                        self.pellets_eaten += 1
+                        ghost.saved_object = None
+                     elif ghost.saved_object == self.POWER:
+                        self.score += self.POWER_POINTS
+                        self.pellets_eaten += 1
+                        ghost.saved_object = None
 
-                # increase the score multiplier for ghosts eaten in this
-                # round
-                self.ghost_multiplier += 1
+                     # increase the score multiplier for ghosts eaten in this
+                     # round
+                     self.ghost_multiplier += 1
 
             else:
 
@@ -521,6 +537,7 @@ class PacBot(GridGame):
         item = self.map[(self.player_pos[0], self.player_pos[1] + 1)]
         if key == "s" and not self.is_blocked(item):
             self.player_pos[1] += 1
+
 
         if key == "Q":
             self.running = False
