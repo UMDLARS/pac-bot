@@ -590,7 +590,7 @@ class PacBot(GridGame):
         self.redraw_lives()
 
         # move ghosts -- speed based on level
-        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level > 2:
+        if self.level == 0 and self.turns % 3 == 0 or self.level == 1 and self.turns % 2 == 0 or self.level >= 2:
             for g in self.ghosts:
                 ghost = self.ghosts[g]
                 self.move_ghost(ghost)
