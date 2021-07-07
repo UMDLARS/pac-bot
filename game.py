@@ -5,6 +5,7 @@ from CYLGame import MapPanel
 from CYLGame import StatusPanel
 from CYLGame.Game import ConstMapping
 from CYLGame.Player import DefaultGridPlayer
+import math
 import sys
 
 
@@ -20,12 +21,14 @@ class Ghost:
         self.start_x = start_x
         self.start_y = start_y
         self.pos = [start_x, start_y]
+        self.target_pos = [start_x, start_y]
         self.direction = 'a'
+        self.previous_dir = None
         self.alive = True
         self.in_house = in_house  # set to True by default
         self.saved_object = None  # stores a map item we're "on top of"
         self.vulnerable = 0
-        self.mode = "frightened"  # scatter, chase, or frightened
+        self.mode = "scatter"  # scatter, chase, or frightened
         # self.mode = None # scatter, chase, or frightened
 
 
@@ -50,14 +53,24 @@ class PacBot(GridGame):
     PLAYER_START_X = 14
     PLAYER_START_Y = 24
     BLINKY_START_X = 14
-    BLINKY_START_Y = 14
+    BLINKY_START_Y = 12
     # start in house for real
     PINKY_START_X = 14
     PINKY_START_Y = 15
-    INKY_START_X = 15
+    INKY_START_X = 12
     INKY_START_Y = 15
     CLYDE_START_X = 16
     CLYDE_START_Y = 15
+
+    # Ghost scatter mode targets
+    BLINKY_TARGET_X = 26
+    BLINKY_TARGET_Y = -2
+    PINKY_TARGET_X = 3
+    PINKY_TARGET_Y = -2
+    INKY_TARGET_X = 28
+    INKY_TARGET_Y = 34
+    CLYDE_TARGET_X = 1
+    CLYDE_TARGET_Y = 34
 
     #    # start in hallway for testing
     #    PINKY_START_X = 15
@@ -219,7 +232,7 @@ class PacBot(GridGame):
                 self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
 
             ghost.alive = True
-            ghost.mode = "frightened"  # FIXME should be 'scatter'
+            ghost.mode = "scatter"
             if ghost.name == "blinky":
                 ghost.pos[0] = ghost.start_x
                 ghost.pos[1] = ghost.start_y
@@ -411,22 +424,163 @@ class PacBot(GridGame):
                 self.reset_positions()
 
     def move_ghost(self, ghost):
-        if ghost.alive == False:
-            # if the ghost is "dead" then we should teleport it back to
-            # its starting location in the house. 
-            ghost.pos[0] = ghost.start_x
-            ghost.pos[1] = ghost.start_y
-            ghost.vulnerable = 0
-            ghost.alive = True
-            ghost.in_house = True
+            # Ghost movement reference: https://gameinternals.com/understanding-pac-man-ghost-behavior
+            # Known deficiencies:
+            #   Pinky and Inky do not chase properly
+            #   
 
-        if ghost.mode == "chase":
+        def remove_backwards(dirs):
+            '''Given a list of directions to move remove the option to reverse direction'''
+            if len(dirs) > 1:
+                if ghost.previous_dir == 'w' and 's' in dirs:
+                    dirs.remove('s')
+                elif ghost.previous_dir == 's' and 'w' in dirs:
+                    dirs.remove('w')
+                elif ghost.previous_dir == 'a' and 'd' in dirs:
+                    dirs.remove('d')
+                elif ghost.previous_dir == 'd' and 'a' in dirs:
+                    dirs.remove('a')
+            
+            return dirs
+        
+        def dir_to_target():
+            '''Find the legal moves that are closest to the current target.'''
+            min_dist = self.map_distance(ghost.pos, ghost.target_pos) + 100
+            dirs = []
+            for delta in [(1, 0, 'd'), (-1, 0, 'a'), (0, 1, 's'), (0, -1, 'w')]:
+                new_pos = (ghost.pos[0] + delta[0], ghost.pos[1] + delta[1])
+                item = self.map[new_pos]
+                print(self.is_blocked(item))
+
+                # Living ghosts can't go back in the house, but dead ones can
+                if ghost.alive:
+                    if (not self.is_blocked(item)) and (not self.is_ghost(item)):
+                        distance = self.map_distance(new_pos, ghost.target_pos)
+                        if distance < min_dist:
+                            min_dist = distance
+                            dirs = [delta[2]]
+                        elif distance == min_dist:
+                            dirs.append(delta[2])
+                else:
+                    if (item == self.DOOR) or (not self.is_blocked and not self.is_ghost(item)):
+                        distance = self.map_distance(new_pos, ghost.target_pos)
+                        if distance < min_dist:
+                            min_dist = distance
+                            dirs = [delta[2]]
+                        elif distance == min_dist:
+                            dirs.append(delta[2])
+            
+            return dirs
+
+        def pick_dir(dirs):
+            '''Given a list of legal and equally good moves, pick one according to "up > left > down"'''
+            choice = dirs[0]
+            if len(dirs) > 1:
+                    if 'w' in dirs:
+                        choice = 'w'
+                    elif 'a' in dirs:
+                        choice = 'a'
+                    elif 's' in dirs:
+                        choice = 's'
+                    else:
+                        choice = 'd'
+
+            return choice
+
+        def ghost_replace_item():
+            '''If ghost saved an object, drop the object before moving the ghost to the new location, 
+            otherwise, erase the ghost's current location'''
+            if ghost.saved_object:
+                self.map[(ghost.pos[0], ghost.pos[1])] = ghost.saved_object
+                ghost.saved_object = None
+            else:
+                self.map[(ghost.pos[0], ghost.pos[1])] = self.EMPTY
+
+        def update_ghost_pos(choice):
+            if choice == 'a':
+                ghost.pos[0] -= 1
+            elif choice == 'd':
+                ghost.pos[0] += 1
+            elif choice == 'w':
+                ghost.pos[1] -= 1
+            elif choice == 's':
+                ghost.pos[1] += 1
+            ghost.previous_dir = ghost.direction
+            ghost.direction = choice
+
+            # if the ghost is just north of the door, set it so that
+            # they can't go back into the house
+            if self.map[(ghost.pos[0], ghost.pos[1] + 1)] == self.DOOR:
+                ghost.in_house = False
+
+        def ghost_pickup_item():
+            # if there is already something at the ghost's new
+            # location (a fruit, pellet, or energizer), save it by
+            # having the ghost "pick it up"
+            if self.map[(ghost.pos[0], ghost.pos[1])] not in [self.EMPTY, self.PLAYER]:
+                ghost.saved_object = self.map[(ghost.pos[0], ghost.pos[1])]
+
+        if ghost.alive == False:
+            # If a dead ghost has reached its target it is alive again and in the house
+            if ghost.pos[0] == ghost.start_x and ghost.pos[1] == ghost.start_y:
+                ghost.vulnerable = 0
+                ghost.alive = True
+                ghost.in_house = True
+            else:
+                # if the ghost is "dead" then it should move back to the house
+                ghost.target_pos = (ghost.start_x, ghost.start_y)
+                
+                dirs = dir_to_target()
+                dirs = remove_backwards(dirs)
+                choice = pick_dir(dirs)
+                update_ghost_pos(choice)
+
+        if ghost.alive and ghost.mode == "chase":
             # chase pac-bot
-            None
-        elif ghost.mode == "scatter":
+            if ghost.name == 'blinky':
+                ghost.target_pos = self.player_pos
+            elif ghost.name == 'pinky':
+                # TODO: Pinky should target 4 tiles ahead of player, but need player orientation for that
+                ghost.target_pos = self.player_pos
+            elif ghost.name == 'inky':
+                # TODO: Inky's target is likewise dependent on the orientation of the player
+                ghost.target_pos = self.player_pos
+            elif ghost.name == 'clyde':
+                player_distance = self.map_distance(ghost.pos, self.player_pos)
+                if (player_distance > 8):
+                    ghost.target_pos = self.player_pos
+                else:
+                    ghost.target_pos = (self.CLYDE_TARGET_X, self.CLYDE_TARGET_Y)
+            
+            dirs = dir_to_target()
+            dirs = remove_backwards(dirs)
+            choice = pick_dir(dirs)
+            ghost_replace_item()
+            update_ghost_pos(choice)
+
+        elif ghost.alive and ghost.mode == "scatter":
             # go to individual corners
-            None
-        else:  # mode is frightened
+            if ghost.name == 'blinky':
+                ghost.target_pos = (self.BLINKY_TARGET_X, self.BLINKY_TARGET_Y)
+            elif ghost.name == 'pinky':
+                ghost.target_pos = (self.PINKY_TARGET_X, self.PINKY_TARGET_Y)
+            elif ghost.name == 'inky':
+                ghost.target_pos = (self.INKY_TARGET_X, self.INKY_TARGET_Y)
+            elif ghost.name == 'clyde':
+                ghost.target_pos = (self.CLYDE_TARGET_X, self.CLYDE_TARGET_Y)
+            
+            print(ghost.name)
+            print(ghost.pos)
+            print("Previous: ", ghost.previous_dir)
+            dirs = dir_to_target()
+            print(dirs)
+            dirs = remove_backwards(dirs)
+            print(dirs)
+            choice = pick_dir(dirs)
+            ghost_replace_item()
+            update_ghost_pos(choice)
+
+        elif ghost.alive:  # mode is frightened
             # run away from pac-bot
 
             dirs = []  # list of directions we can go
@@ -811,6 +965,12 @@ class PacBot(GridGame):
                              "map_height": PacBot.MAP_HEIGHT,
                              "map_width": PacBot.MAP_WIDTH,
                              })
+    
+    @staticmethod
+    def map_distance(pos, target):
+        pos_x, pos_y = pos
+        tar_x, tar_y = target
+        return math.sqrt((tar_x - pos_x) ** 2 + (tar_y - pos_y) ** 2)
 
     def get_score(self):
         return self.score
